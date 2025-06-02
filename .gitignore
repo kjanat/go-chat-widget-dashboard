@@ -245,4 +245,9 @@ test_customer.css
 
 # PowerShell
 powershell/
+
+# Schema files
 air.schema.json
+
+# Miscellaneous
+miscellaneous/

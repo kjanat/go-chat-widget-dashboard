@@ -97,7 +97,7 @@ func (s *CustomerService) Create(customer *models.Customer) error {
 	customer.ID = generateID()
 	customer.APIKey = generateAPIKey()
 	customer.CreatedAt = time.Now()
-	
+
 	// Set default brand colors if empty
 	if customer.BrandColors == "" {
 		customer.BrandColors = "primary: #007bff\nsecondary: #6c757d\nbackground: #ffffff\ntext: #212529"

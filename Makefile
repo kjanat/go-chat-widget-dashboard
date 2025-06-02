@@ -17,7 +17,7 @@ help:
 # Build the application
 build:
 	@echo "Building the application..."
-	go build -o bin/chat-widget-server ./cmd/server
+	go build -o bin/chat-widget-server main.go
 
 # Run the application
 run: build

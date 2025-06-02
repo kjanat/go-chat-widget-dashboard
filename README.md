@@ -5,6 +5,7 @@ A complete, production-ready chat widget system built with Go, featuring a 3D av
 ## 🚀 Features
 
 ### Core Features
+
 - **🎯 Embeddable Chat Widget**: Simple 2-line embed code for any website
 - **🤖 AI-Powered Responses**: OpenAI integration with customizable prompts per customer
 - **👤 3D Avatar Support**: Upload and display custom 3D models (.glb/.gltf) with emotion-based animations
@@ -13,6 +14,7 @@ A complete, production-ready chat widget system built with Go, featuring a 3D av
 - **🔒 Secure Multi-tenancy**: Domain validation, API keys, and customer isolation
 
 ### Admin Dashboard
+
 - **📊 Customer Management**: Create, edit, and manage multiple customers
 - **📈 Chat Analytics**: View chat logs, session history, and usage statistics
 - **🎬 3D Model Upload**: Easy upload and management of customer avatars
@@ -20,6 +22,7 @@ A complete, production-ready chat widget system built with Go, featuring a 3D av
 - **🔐 Secure Authentication**: Session-based admin authentication with bcrypt
 
 ### Technical Features
+
 - **🏗️ Clean Architecture**: Well-structured codebase with separation of concerns
 - **🧪 Test-Driven Development**: Comprehensive test coverage
 - **🔄 Hot Reload**: Development mode with automatic reloading
@@ -28,29 +31,29 @@ A complete, production-ready chat widget system built with Go, featuring a 3D av
 
 ## 📁 Project Structure
 
-```
+```sh
 go-chat-widget-dashboard/
-├── cmd/server/                 # Main application entry point
-│   └── main.go
-├── internal/                   # Private application code
-│   ├── database/              # Database layer and migrations
-│   ├── handlers/              # HTTP handlers (controllers)
-│   ├── models/                # Data models and DTOs
-│   └── services/              # Business logic layer
-├── web/                       # Web assets
-│   ├── templates/             # HTML templates and widget JS
-│   └── static/               # CSS, JS, and other static files
-├── scripts/                   # Utility scripts
-├── uploads/                   # File uploads (3D models, etc.)
-├── docker-compose.yml         # Container orchestration
-├── Dockerfile                 # Container definition
-├── Makefile                   # Build and development commands
-└── .air.toml                  # Hot reload configuration
+├── internal/            # Private application code
+│   ├── database/          # Database layer and migrations
+│   ├── handlers/          # HTTP handlers (controllers)
+│   ├── models/            # Data models and DTOs
+│   └── services/          # Business logic layer
+├── web/                 # Web assets
+│   ├── templates/         # HTML templates and widget JS
+│   └── static/            # CSS, JS, and other static files
+├── scripts/             # Utility scripts
+├── uploads/             # File uploads (3D models, etc.)
+├── main.go              # Application entry point
+├── docker-compose.yml     # Container orchestration
+├── Dockerfile             # Container definition
+├── Makefile               # Build and development commands
+└── .air.toml              # Hot reload configuration
 ```
 
 ## 🛠️ Quick Start
 
 ### Prerequisites
+
 - Go 1.21+
 - SQLite3
 - Make (optional, for easier commands)
@@ -58,12 +61,14 @@ go-chat-widget-dashboard/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/kjanat/go-chat-widget-dashboard.git
    cd go-chat-widget-dashboard
    ```
 
 2. **Install dependencies**
+
    ```bash
    make install
    # or manually:
@@ -71,6 +76,7 @@ go-chat-widget-dashboard/
    ```
 
 3. **Initialize database and create admin user**
+
    ```bash
    make init-db
    # or manually:
@@ -78,10 +84,11 @@ go-chat-widget-dashboard/
    ```
 
 4. **Run the server**
+
    ```bash
    make run
    # or manually:
-   go build -o bin/chat-widget-server ./cmd/server && ./bin/chat-widget-server
+   go build -o bin/chat-widget-server main.go && ./bin/chat-widget-server
    ```
 
 5. **Access the admin dashboard**
@@ -123,11 +130,13 @@ Add these two lines to any webpage:
 ## 🧪 Development
 
 ### Development Mode with Hot Reload
+
 ```bash
 make dev
 ```
 
 ### Running Tests
+
 ```bash
 make test
 # With coverage:
@@ -135,6 +144,7 @@ make test-coverage
 ```
 
 ### Code Quality
+
 ```bash
 make fmt     # Format code
 make lint    # Lint code
@@ -142,6 +152,7 @@ make security # Security scan
 ```
 
 ### Building for Production
+
 ```bash
 make build
 ```
@@ -149,16 +160,19 @@ make build
 ## 🐳 Docker Deployment
 
 ### Simple Docker Run
+
 ```bash
 make docker
 ```
 
 ### Docker Compose (Recommended)
+
 ```bash
 docker-compose up -d
 ```
 
 ### With Nginx Proxy
+
 ```bash
 docker-compose --profile nginx up -d
 ```
@@ -166,12 +180,14 @@ docker-compose --profile nginx up -d
 ## ⚙️ Configuration
 
 ### Environment Variables
+
 - `PORT`: Server port (default: 8080)
 - `SESSION_SECRET`: Session encryption key
 - `DATABASE_URL`: Database connection string (optional)
 
 ### Customer Configuration
 Each customer can be configured with:
+
 - **Brand Colors**: JSON object defining widget theme
 - **Logo URL**: Customer logo displayed in widget header
 - **OpenAI Prompt**: Custom system prompt for AI responses
@@ -179,6 +195,7 @@ Each customer can be configured with:
 - **3D Model**: Custom avatar with emotion-based animations
 
 ### Example Brand Colors JSON
+
 ```json
 {
   "primary": "#007bff",
@@ -190,6 +207,7 @@ Each customer can be configured with:
 ```
 
 ### Example Animation Mapping JSON
+
 ```json
 {
   "happy": {"name": "smile"},
@@ -202,10 +220,12 @@ Each customer can be configured with:
 ## 🔧 API Endpoints
 
 ### Widget Endpoints
+
 - `GET /widget.js?customer=ID&key=KEY` - Serve widget JavaScript
 - `WS /ws/{customerID}` - WebSocket chat connection
 
 ### Admin Endpoints
+
 - `GET /admin/login` - Admin login page
 - `GET /admin/` - Dashboard
 - `GET /admin/customers/{id}` - Edit customer
@@ -215,12 +235,14 @@ Each customer can be configured with:
 ## 🏗️ Architecture
 
 ### Clean Architecture Principles
+
 - **Models**: Define data structures and interfaces
 - **Services**: Implement business logic and external integrations
 - **Handlers**: Handle HTTP requests and WebSocket connections
 - **Database**: Manage data persistence and migrations
 
 ### Key Design Patterns
+
 - **Dependency Injection**: Services are injected into handlers
 - **Repository Pattern**: Database operations abstracted through services
 - **Template Rendering**: Server-side HTML generation with Go templates
@@ -237,12 +259,14 @@ Each customer can be configured with:
 ## 🚧 Roadmap
 
 ### Immediate Improvements
+
 - [ ] **OpenAI Integration**: Replace mock with actual API calls
 - [ ] **Rate Limiting**: Implement request rate limiting
 - [ ] **Analytics Dashboard**: Add usage analytics and metrics
 - [ ] **Customer Registration**: Self-service customer onboarding
 
 ### Advanced Features
+
 - [ ] **Redis Integration**: Scale WebSocket connections across servers
 - [ ] **S3/GCS Support**: Cloud storage for 3D models
 - [ ] **Multi-language Support**: Internationalization
@@ -250,6 +274,7 @@ Each customer can be configured with:
 - [ ] **A/B Testing**: Test different prompts and avatars
 
 ### Enterprise Features
+
 - [ ] **SSO Integration**: SAML/OIDC authentication
 - [ ] **Multi-tenant Database**: PostgreSQL with tenant isolation
 - [ ] **Kubernetes Deployment**: Helm charts and operators
@@ -265,6 +290,7 @@ Each customer can be configured with:
 6. Open a Pull Request
 
 ### Development Guidelines
+
 - Follow Go best practices and idioms
 - Write tests for all new functionality
 - Update documentation for API changes
@@ -281,11 +307,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Gorilla Mux](https://github.com/gorilla/mux) - HTTP router
 - [Three.js](https://threejs.org/) - 3D graphics library
 - [Bootstrap](https://getbootstrap.com/) - UI framework
-
-## 📞 Support
-
-For support, email support@yourcompany.com or create an issue on GitHub.
-
----
-
-**Built with ❤️ using Go and modern web technologies**

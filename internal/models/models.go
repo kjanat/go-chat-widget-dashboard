@@ -29,10 +29,10 @@ func (c *Customer) BrandColorsToJSON() string {
 	}
 
 	colors := make(map[string]string)
-	
+
 	// Handle both literal \n and actual newlines
 	text := strings.ReplaceAll(c.BrandColors, "\\n", "\n")
-	
+
 	// Parse simple format: primary: #007bff\nsecondary: #6c757d
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
@@ -40,7 +40,7 @@ func (c *Customer) BrandColorsToJSON() string {
 		if line == "" || !strings.Contains(line, ":") {
 			continue
 		}
-		
+
 		parts := strings.SplitN(line, ":", 2)
 		if len(parts) == 2 {
 			key := strings.TrimSpace(parts[0])
@@ -48,7 +48,7 @@ func (c *Customer) BrandColorsToJSON() string {
 			colors[key] = value
 		}
 	}
-	
+
 	// Set defaults if missing
 	if _, exists := colors["primary"]; !exists {
 		colors["primary"] = "#007bff"
@@ -62,7 +62,7 @@ func (c *Customer) BrandColorsToJSON() string {
 	if _, exists := colors["text"]; !exists {
 		colors["text"] = "#212529"
 	}
-	
+
 	jsonBytes, _ := json.Marshal(colors)
 	return string(jsonBytes)
 }
@@ -73,13 +73,13 @@ func (c *Customer) SetBrandColorsFromJSON(jsonStr string) {
 		c.BrandColors = "primary: #007bff\nsecondary: #6c757d\nbackground: #ffffff\ntext: #212529"
 		return
 	}
-	
+
 	var colors map[string]string
 	if err := json.Unmarshal([]byte(jsonStr), &colors); err != nil {
 		c.BrandColors = "primary: #007bff\nsecondary: #6c757d\nbackground: #ffffff\ntext: #212529"
 		return
 	}
-	
+
 	var lines []string
 	for key, value := range colors {
 		lines = append(lines, key+": "+value)
