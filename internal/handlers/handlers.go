@@ -209,6 +209,19 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	h.templates.ExecuteTemplate(w, "dashboard.html", data)
 }
 
+// DashboardLogout handles admin logout
+func (h *Handler) DashboardLogout(w http.ResponseWriter, r *http.Request) {
+	session, _ := h.store.Get(r, "admin-session")
+
+	// Clear the session
+	session.Values["user_id"] = nil
+	session.Values["username"] = nil
+	session.Options.MaxAge = -1 // This deletes the session
+	session.Save(r, w)
+
+	http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
+}
+
 // CustomerEdit handles customer editing
 func (h *Handler) CustomerEdit(w http.ResponseWriter, r *http.Request) {
 	session, _ := h.store.Get(r, "admin-session")
@@ -340,6 +353,44 @@ func (h *Handler) ModelUpload(w http.ResponseWriter, r *http.Request) {
 		"status": "success",
 		"path":   modelPath,
 	})
+}
+
+// ModelDownload handles 3D model downloads
+func (h *Handler) ModelDownload(w http.ResponseWriter, r *http.Request) {
+	session, _ := h.store.Get(r, "admin-session")
+	if session.Values["user_id"] == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	customerID := mux.Vars(r)["id"]
+
+	customer, err := h.customerService.GetByID(customerID)
+	if err != nil {
+		http.Error(w, "Customer not found", http.StatusNotFound)
+		return
+	}
+
+	if customer.ModelPath == "" {
+		http.Error(w, "No model uploaded", http.StatusNotFound)
+		return
+	}
+
+	// Get the actual file path
+	filePath := filepath.Join("./uploads/models", filepath.Base(customer.ModelPath))
+
+	// Check if file exists
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		http.Error(w, "Model file not found", http.StatusNotFound)
+		return
+	}
+
+	// Set headers for download
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filepath.Base(customer.ModelPath)))
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	// Serve the file
+	http.ServeFile(w, r, filePath)
 }
 
 // ChatLogs handles chat log viewing

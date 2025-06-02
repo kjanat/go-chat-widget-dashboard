@@ -118,7 +118,7 @@
   <script>
     function showEmbedCode(customerId) {
       const code = `<script src="${location.origin}/widget.js?customer=${customerId}"></script>
-  <div id="chat-widget"></div>`;
+<div id="chat-widget"></div>`;
   document.getElementById('embedCode').textContent = code;
   new bootstrap.Modal(document.getElementById('embedModal')).show();
   }

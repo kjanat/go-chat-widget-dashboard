@@ -1,0 +1,103 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/go
+{
+  "name": "Go",
+
+  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  "image": "mcr.microsoft.com/devcontainers/go",
+
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "moby": true,
+      "installDockerBuildx": true,
+      "installDockerComposeSwitch": true,
+      "version": "latest",
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "installDirectlyFromGitHubRelease": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "nodeGypDependencies": true,
+      "version": "latest",
+      "pnpmVersion": "latest",
+      "nvmVersion": "latest"
+    },
+    "ghcr.io/devcontainers-extra/features/devcontainers-cli:1": {
+      "version": "latest"
+    },
+    // "ghcr.io/devcontainers-extra/features/gh-release:1": {},
+    // "ghcr.io/devcontainers-extra/features/gitmux:1": {
+    //   "version": "latest"
+    // },
+    // "ghcr.io/devcontainers-extra/features/how2:1": {
+    //   "version": "latest"
+    // },
+    // "ghcr.io/devcontainers-extra/features/powershell:1": {
+    //   "version": "latest"
+    // },
+    // "ghcr.io/devcontainers-extra/features/ripgrep:1": {
+    //   "version": "latest"
+    // },
+    "ghcr.io/devcontainers-extra/features/shfmt": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers-extra/features/tmux-apt-get": {},
+    "ghcr.io/devcontainers-extra/features/ts-node": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers-extra/features/tsx": {
+      "version": "latest"
+    },
+    // "ghcr.io/devcontainers-extra/features/upx": {
+    //   "version": "latest"
+    // },
+    "ghcr.io/devcontainers-extra/features/vue-cli": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers-extra/features/zsh-plugins": {
+      "plugins": "ssh-agent npm git colored-man-pages colorize common-aliases command-not-found copypath debian docker docker-compose encode64 extract frontend-search fzf gh gitignore golang gpg-agent isodate magic-enter npm nvm pnpm ssh systemd thefuck timer tmux vscode urltools",
+      "omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions",
+      "username": "root"
+    },
+    // "ghcr.io/dusansimic/devcontainer-features/templ:0": {
+    //   "version": "latest"
+    // },
+    "ghcr.io/georgofenbeck/features/thefuck-pipx": {},
+    "ghcr.io/guiyomh/features/golangci-lint": {
+      "version": "latest"
+    },
+    // "ghcr.io/marcozac/devcontainer-features/shellcheck": {
+    //   "version": "latest"
+    // },
+    "ghcr.io/warrenbuckley/codespace-features/sqlite": {},
+    "ghcr.io/christophermacgown/devcontainer-features/mcfly": {
+      "autoEnable": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers-community/npm-features/prettier": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers-community/npm-features/typescript:1": {
+      "version": "latest"
+    }
+  }
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  // "postCreateCommand": {
+  //    "server": "npm start",
+  //    "db": ["mysql", "-u", "root", "-p", "my database"],
+  //    "go": "go version"
+  // }
+
+  // Configure tool-specific properties.
+  // "customizations": {},
+
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // "remoteUser": "root"
+}

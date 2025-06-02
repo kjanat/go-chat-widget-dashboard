@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -80,10 +81,12 @@ func setupRoutes(h *handlers.Handler) *mux.Router {
 	// Admin routes
 	admin := router.PathPrefix("/admin").Subrouter()
 	admin.HandleFunc("/login", h.DashboardLogin).Methods("GET", "POST")
+	admin.HandleFunc("/logout", h.DashboardLogout).Methods("GET")
 	admin.HandleFunc("/", h.Dashboard).Methods("GET")
 	admin.HandleFunc("/customers", h.CustomerCreate).Methods("POST")
 	admin.HandleFunc("/customers/{id}", h.CustomerEdit).Methods("GET", "POST")
 	admin.HandleFunc("/customers/{id}/model", h.ModelUpload).Methods("POST")
+	admin.HandleFunc("/customers/{id}/model/download", h.ModelDownload).Methods("GET")
 	admin.HandleFunc("/chat-logs", h.ChatLogs).Methods("GET")
 
 	// Root redirect
@@ -101,8 +104,27 @@ func loadTemplates() (*template.Template, error) {
 		return nil, fmt.Errorf("failed to create template filesystem: %v", err)
 	}
 
+	// Create template with custom functions
+	tmpl := template.New("").Funcs(template.FuncMap{
+		"toNewlines": func(s string) string {
+			// Convert comma-separated values to newlines, or just return as-is if already has newlines
+			if len(s) == 0 {
+				return s
+			}
+			// If it already has newlines, return as-is
+			if strings.Contains(s, "\n") {
+				return s
+			}
+			// If it has commas but no newlines, convert commas to newlines
+			if strings.Contains(s, ",") {
+				return strings.ReplaceAll(s, ",", "\n")
+			}
+			return s
+		},
+	})
+
 	// Parse all template files
-	tmpl, err := template.ParseFS(templateFS, "*.html", "*.js")
+	tmpl, err = tmpl.ParseFS(templateFS, "*.html", "*.js")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse templates: %v", err)
 	}
