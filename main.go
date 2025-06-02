@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"log"
@@ -16,15 +17,15 @@ import (
 	"github.com/kjanat/go-chat-widget-dashboard/internal/services"
 )
 
-//go:embed web/static/css/admin.css
+//go:embed web
 var staticFiles embed.FS
 
-//go:embed web/templates
+//go:embed web
 var templateFiles embed.FS
 
 func main() {
 	// Initialize database
-	db, err := database.New("./chat_widget.db")
+	db, err := database.New("./db/chat_widget.db")
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
@@ -94,32 +95,19 @@ func setupRoutes(h *handlers.Handler) *mux.Router {
 }
 
 func loadTemplates() (*template.Template, error) {
-	templates := template.New("")
-
-	// Define the template files
-	templatePaths := []string{
-		"web/templates/login.html",
-		"web/templates/dashboard.html",
-		"web/templates/customer-edit.html",
-		"web/templates/chat-logs.html",
-		"web/templates/widget.js",
+	// Try to use ParseFS approach
+	templateFS, err := fs.Sub(templateFiles, "web/templates")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create template filesystem: %v", err)
 	}
 
-	for _, file := range templatePaths {
-		content, err := templateFiles.ReadFile(file)
-		if err != nil {
-			return nil, err
-		}
-
-		// Get just the filename for the template name
-		name := file[len("web/templates/"):]
-		_, err = templates.New(name).Parse(string(content))
-		if err != nil {
-			return nil, err
-		}
+	// Parse all template files
+	tmpl, err := template.ParseFS(templateFS, "*.html", "*.js")
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse templates: %v", err)
 	}
 
-	return templates, nil
+	return tmpl, nil
 }
 
 func getEnvOrDefault(key, defaultValue string) string {

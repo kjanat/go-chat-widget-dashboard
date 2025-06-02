@@ -11,7 +11,7 @@ import (
 
 func main() {
 	// Initialize database
-	db, err := database.New("./chat_widget.db")
+	db, err := database.New("./db/chat_widget.db")
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}

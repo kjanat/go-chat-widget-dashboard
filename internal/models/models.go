@@ -22,17 +22,22 @@ type Customer struct {
 	Active         bool      `json:"active" db:"active"`
 }
 
-// BrandColorsToJSON converts the simple format to JSON for JavaScript consumption
+// BrandColorsToJSON converts simple key-value format to JSON for the widget
 func (c *Customer) BrandColorsToJSON() string {
-	// Handle both literal \n and actual newlines for backwards compatibility
-	text := strings.ReplaceAll(c.BrandColors, "\\n", "\n")
-	
+	if c.BrandColors == "" {
+		return `{"primary": "#007bff", "secondary": "#6c757d", "background": "#ffffff", "text": "#212529"}`
+	}
+
 	colors := make(map[string]string)
 	
+	// Handle both literal \n and actual newlines
+	text := strings.ReplaceAll(c.BrandColors, "\\n", "\n")
+	
+	// Parse simple format: primary: #007bff\nsecondary: #6c757d
 	lines := strings.Split(text, "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if line == "" {
+		if line == "" || !strings.Contains(line, ":") {
 			continue
 		}
 		
@@ -60,12 +65,6 @@ func (c *Customer) BrandColorsToJSON() string {
 	
 	jsonBytes, _ := json.Marshal(colors)
 	return string(jsonBytes)
-}
-
-// BrandColorsDisplay returns brand colors formatted for display in templates
-func (c *Customer) BrandColorsDisplay() string {
-	// Handle both literal \n and actual newlines for backwards compatibility
-	return strings.ReplaceAll(c.BrandColors, "\\n", "\n")
 }
 
 // SetBrandColorsFromJSON converts JSON to simple format (for backwards compatibility)

@@ -12,7 +12,7 @@ services:
       - SESSION_SECRET=your-secure-session-secret-here
     volumes:
       - ./uploads:/app/uploads
-      - ./chat_widget.db:/app/chat_widget.db
+      - ./db/chat_widget.db:/app/chat_widget.db
     restart: unless-stopped
     healthcheck:
       test:

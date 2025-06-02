@@ -227,18 +227,22 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,macos,linux,go,visualstudiocode,jetbrains+all,microsoftoffice
 
-# Database files
+# Uploads
+uploads/models/
+
+wiki/
+db/
 *.db
 *.db-shm
 *.db-wal
 
-# Ignore the following files and directories
-# Local test files
 test.html
+test_customer.js
+test_customer.css
 
-# Copilot instructions
-.github/copilot-instructions.md
 .github/instructions/
+**/*-instructions.md
 
-# Wiki files
-wiki/
+# PowerShell
+powershell/
+air.schema.json

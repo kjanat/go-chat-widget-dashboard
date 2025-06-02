@@ -40,7 +40,7 @@ clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf bin/
 	rm -f coverage.out coverage.html
-	rm -f chat_widget.db
+	rm -f db/chat_widget.db
 
 # Install dependencies
 install:

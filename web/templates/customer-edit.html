@@ -56,7 +56,7 @@
 
               <div class="mb-3">
                 <label for="brand_colors" class="form-label">Brand Colors</label>
-                <textarea class="form-control" id="brand_colors" name="brand_colors" rows="4" placeholder="primary: #007bff&#10;secondary: #6c757d&#10;background: #ffffff&#10;text: #212529">{{.BrandColorsDisplay}}</textarea>
+                <textarea class="form-control" id="brand_colors" name="brand_colors" rows="4" placeholder="primary: #007bff&#10;secondary: #6c757d&#10;background: #ffffff&#10;text: #212529">{{.BrandColors | toNewlines}}</textarea>
                 <div class="form-text">Simple format: one color per line as "name: #color". Common names: primary, secondary, background, text.</div>
               </div>
 
