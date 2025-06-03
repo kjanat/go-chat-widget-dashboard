@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -25,43 +26,59 @@ var staticFiles embed.FS
 var templateFiles embed.FS
 
 func main() {
+	log.Println("Starting Go Chat Widget Dashboard...")
+	
 	// Initialize database
+	log.Println("Initializing database...")
 	db, err := database.New("./db/chat_widget.db")
 	if err != nil {
-		log.Fatal("Failed to initialize database:", err)
+		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
+	log.Println("Database initialized successfully")
 
 	// Initialize services
+	log.Println("Initializing services...")
 	customerService := services.NewCustomerService(db.DB)
 	chatService := services.NewChatService(db.DB)
 	openaiService := services.NewOpenAIService()
 	authService := services.NewAuthService(db.DB)
+	analyticsService := services.NewAnalyticsService(db.DB)
+	log.Println("Services initialized successfully")
 
 	// Initialize session store
+	log.Println("Initializing session store...")
 	store := sessions.NewCookieStore([]byte(getEnvOrDefault("SESSION_SECRET", "your-secret-key")))
+	log.Println("Session store initialized")
 
 	// Load templates
+	log.Println("Loading templates...")
 	templates, err := loadTemplates()
 	if err != nil {
 		log.Fatal("Failed to load templates:", err)
 	}
+	log.Println("Templates loaded successfully")
 
 	// Initialize handlers
+	log.Println("Initializing handlers...")
 	handler := handlers.New(
 		customerService,
 		chatService,
 		openaiService,
 		authService,
+		analyticsService,
 		store,
 		templates,
 	)
+	log.Println("Handlers initialized successfully")
 
 	// Setup routes
+	log.Println("Setting up routes...")
 	router := setupRoutes(handler)
+	log.Println("Routes setup complete")
 
 	// Start server
-	port := getEnvOrDefault("PORT", "8080")
+	port := getEnvOrDefault("PORT", "3000")
 	log.Printf("Server starting on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }
@@ -72,6 +89,12 @@ func setupRoutes(h *handlers.Handler) *mux.Router {
 	// Widget routes
 	router.HandleFunc("/widget.js", h.WidgetJS).Methods("GET")
 	router.HandleFunc("/ws/{customerID}", h.WebSocket)
+	router.HandleFunc("/api/widget/usage", h.WidgetUsage).Methods("POST")
+
+	// Health and status endpoints
+	router.HandleFunc("/health", h.Health).Methods("GET")
+	router.HandleFunc("/api/status", h.APIStatus).Methods("GET")
+	router.HandleFunc("/api/docs", h.APIDocs).Methods("GET")
 
 	// Static files
 	staticFS, _ := fs.Sub(staticFiles, "web/static")
@@ -88,9 +111,15 @@ func setupRoutes(h *handlers.Handler) *mux.Router {
 	admin.HandleFunc("/customers/{id}/model", h.ModelUpload).Methods("POST")
 	admin.HandleFunc("/customers/{id}/model/download", h.ModelDownload).Methods("GET")
 	admin.HandleFunc("/chat-logs", h.ChatLogs).Methods("GET")
+	admin.HandleFunc("/analytics", h.Analytics).Methods("GET")
+	admin.HandleFunc("/analytics/live-stats", h.AnalyticsLiveStats).Methods("GET")
+	admin.HandleFunc("/analytics/generate-sample", h.GenerateSampleAnalytics).Methods("POST")
 
-	// Root redirect
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// Landing page
+	router.HandleFunc("/", h.Landing).Methods("GET")
+	
+	// Direct admin access
+	router.HandleFunc("/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/", http.StatusSeeOther)
 	})
 
@@ -120,6 +149,20 @@ func loadTemplates() (*template.Template, error) {
 				return strings.ReplaceAll(s, ",", "\n")
 			}
 			return s
+		},
+		"json": func(v interface{}) string {
+			// Simple JSON marshal for template use
+			if v == nil {
+				return "null"
+			}
+			b, err := json.Marshal(v)
+			if err != nil {
+				return "null"
+			}
+			return string(b)
+		},
+		"mul": func(a, b float64) float64 {
+			return a * b
 		},
 	})
 

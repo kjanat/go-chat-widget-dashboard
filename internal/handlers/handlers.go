@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -22,13 +24,15 @@ import (
 
 // Handler holds all the service dependencies
 type Handler struct {
-	customerService *services.CustomerService
-	chatService     *services.ChatService
-	openaiService   *services.OpenAIService
-	authService     *services.AuthService
-	store           *sessions.CookieStore
-	upgrader        websocket.Upgrader
-	templates       *template.Template
+	customerService  *services.CustomerService
+	chatService      *services.ChatService
+	openaiService    *services.OpenAIService
+	authService      *services.AuthService
+	analyticsService *services.AnalyticsService
+	store            *sessions.CookieStore
+	upgrader         websocket.Upgrader
+	templates        *template.Template
+	startTime        time.Time
 }
 
 // New creates a new handler with all dependencies
@@ -37,6 +41,7 @@ func New(
 	chatService *services.ChatService,
 	openaiService *services.OpenAIService,
 	authService *services.AuthService,
+	analyticsService *services.AnalyticsService,
 	store *sessions.CookieStore,
 	templates *template.Template,
 ) *Handler {
@@ -49,13 +54,15 @@ func New(
 	}
 
 	return &Handler{
-		customerService: customerService,
-		chatService:     chatService,
-		openaiService:   openaiService,
-		authService:     authService,
-		store:           store,
-		upgrader:        upgrader,
-		templates:       templates,
+		customerService:  customerService,
+		chatService:      chatService,
+		openaiService:    openaiService,
+		authService:      authService,
+		analyticsService: analyticsService,
+		store:            store,
+		upgrader:         upgrader,
+		templates:        templates,
+		startTime:        time.Now(),
 	}
 }
 
@@ -415,4 +422,285 @@ func (h *Handler) ChatLogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.templates.ExecuteTemplate(w, "chat-logs.html", data)
+}
+
+// Analytics handles the analytics dashboard
+func (h *Handler) Analytics(w http.ResponseWriter, r *http.Request) {
+	// Check authentication
+	session, _ := h.store.Get(r, "admin-session")
+	if session.Values["user_id"] == nil {
+		http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
+		return
+	}
+
+	// Get time range from query parameter
+	timeRange := r.URL.Query().Get("range")
+	if timeRange == "" {
+		timeRange = "month" // default
+	}
+
+	// Get analytics data
+	stats, err := h.analyticsService.GetDashboardStats(timeRange)
+	if err != nil {
+		log.Printf("Error getting analytics stats: %v", err)
+		// Create empty stats to prevent template errors
+		stats = &models.DashboardStats{
+			TotalSessions:     0,
+			ActiveSessions:    0,
+			TotalMessages:     0,
+			AvgResponseTime:   0,
+			AvgSatisfaction:   0,
+			ConversionRate:    0,
+			TopCountries:      []models.CountryStats{},
+			HourlyActivity:    []models.HourlyStats{},
+			CustomerActivity:  []models.CustomerStats{},
+			DeviceBreakdown:   []models.DeviceStats{},
+		}
+	}
+
+	data := map[string]interface{}{
+		"Stats":    stats,
+		"Username": session.Values["username"],
+		"TimeRange": timeRange,
+	}
+
+	// Add template functions for JSON serialization
+	h.templates.Funcs(template.FuncMap{
+		"json": func(v interface{}) string {
+			b, _ := json.Marshal(v)
+			return string(b)
+		},
+		"mul": func(a, b float64) float64 {
+			return a * b
+		},
+	})
+
+	err = h.templates.ExecuteTemplate(w, "analytics.html", data)
+	if err != nil {
+		log.Printf("Error executing analytics template: %v", err)
+		http.Error(w, "Error rendering analytics page", http.StatusInternalServerError)
+	}
+}
+
+// AnalyticsLiveStats provides real-time statistics for AJAX updates
+func (h *Handler) AnalyticsLiveStats(w http.ResponseWriter, r *http.Request) {
+	// Check authentication
+	session, _ := h.store.Get(r, "admin-session")
+	if session.Values["user_id"] == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get current active sessions
+	activeSessions, err := h.analyticsService.GetActiveSessionsCount()
+	if err != nil {
+		log.Printf("Error getting active sessions: %v", err)
+		activeSessions = 0
+	}
+
+	// Create mock recent activity for demonstration
+	recentActivity := []map[string]interface{}{
+		{
+			"type":         "new_session",
+			"description":  "New chat session started",
+			"customerName": "Demo Customer",
+			"timeAgo":      "Just now",
+		},
+	}
+
+	response := map[string]interface{}{
+		"activeSessions":  activeSessions,
+		"recentActivity": recentActivity,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// GenerateSampleAnalytics creates sample data for demonstration
+func (h *Handler) GenerateSampleAnalytics(w http.ResponseWriter, r *http.Request) {
+	// Check authentication
+	session, _ := h.store.Get(r, "admin-session")
+	if session.Values["user_id"] == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	err := h.analyticsService.GenerateSampleData()
+	if err != nil {
+		http.Error(w, "Error generating sample data: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+// Landing serves the marketing landing page
+func (h *Handler) Landing(w http.ResponseWriter, r *http.Request) {
+	// Get some basic stats for the landing page
+	totalCustomers, _ := h.customerService.GetTotalCount()
+	
+	// Get analytics stats if available
+	dashboardStats, _ := h.analyticsService.GetDashboardStats("all")
+	
+	data := map[string]interface{}{
+		"TotalCustomers":   totalCustomers,
+		"TotalSessions":    dashboardStats.TotalSessions,
+		"ActiveSessions":   dashboardStats.ActiveSessions,
+		"AvgResponseTime":  dashboardStats.AvgResponseTime,
+	}
+
+	h.templates.ExecuteTemplate(w, "landing.html", data)
+}
+
+// Health returns the application health status
+func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
+	health := map[string]interface{}{
+		"status":    "healthy",
+		"timestamp": time.Now().Unix(),
+		"version":   "1.0.0",
+		"uptime":    time.Since(h.startTime).String(),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(health)
+}
+
+// APIStatus returns API statistics and system information
+func (h *Handler) APIStatus(w http.ResponseWriter, r *http.Request) {
+	// Get basic stats
+	totalCustomers, _ := h.customerService.GetTotalCount()
+	dashboardStats, _ := h.analyticsService.GetDashboardStats("all")
+	
+	status := map[string]interface{}{
+		"api_version":      "v1.0.0",
+		"status":           "operational",
+		"timestamp":        time.Now().Unix(),
+		"uptime":           time.Since(h.startTime).String(),
+		"total_customers":  totalCustomers,
+		"total_sessions":   dashboardStats.TotalSessions,
+		"active_sessions":  dashboardStats.ActiveSessions,
+		"avg_response_time": dashboardStats.AvgResponseTime,
+		"database_status":  "connected",
+		"memory_usage":     getMemoryUsage(),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(status)
+}
+
+// APIDocs serves a simple API documentation page
+func (h *Handler) APIDocs(w http.ResponseWriter, r *http.Request) {
+	docs := map[string]interface{}{
+		"title":       "Chat Widget API Documentation",
+		"version":     "v1.0.0",
+		"description": "REST API for the Go Chat Widget Dashboard",
+		"endpoints": []map[string]interface{}{
+			{
+				"method":      "GET",
+				"path":        "/health",
+				"description": "Health check endpoint",
+				"response":    "Returns application health status",
+			},
+			{
+				"method":      "GET", 
+				"path":        "/api/status",
+				"description": "System status and statistics",
+				"response":    "Returns comprehensive system metrics",
+			},
+			{
+				"method":      "GET",
+				"path":        "/widget.js",
+				"description": "Serve chat widget JavaScript",
+				"parameters":  "customer (required), key (optional)",
+				"response":    "JavaScript code for embedding chat widget",
+			},
+			{
+				"method":      "WebSocket",
+				"path":        "/ws/{customerID}",
+				"description": "WebSocket connection for real-time chat",
+				"response":    "Bidirectional chat messages",
+			},
+			{
+				"method":      "GET",
+				"path":        "/admin/analytics/live-stats",
+				"description": "Live analytics data (authenticated)",
+				"response":    "Real-time statistics for dashboard",
+			},
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(docs)
+}
+
+// WidgetUsage tracks widget usage statistics
+func (h *Handler) WidgetUsage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var usage struct {
+		CustomerID string `json:"customer_id"`
+		Event      string `json:"event"` // "load", "open", "message", "close"
+		UserAgent  string `json:"user_agent"`
+		PageURL    string `json:"page_url"`
+		Timestamp  int64  `json:"timestamp"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&usage); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Record the usage event in analytics
+	if h.analyticsService != nil {
+		now := time.Now()
+		metric := &models.ChatMetrics{
+			ID:               fmt.Sprintf("usage-%d", now.UnixNano()),
+			CustomerID:       usage.CustomerID,
+			SessionID:        fmt.Sprintf("widget-%d", now.UnixNano()),
+			MessageCount:     1,
+			SessionStartTime: now,
+			UserAgent:        usage.UserAgent,
+			Country:          "Unknown", // Could be enhanced with IP geolocation
+			DeviceType:       getDeviceFromUserAgent(usage.UserAgent),
+			PageURL:          usage.PageURL,
+			CreatedAt:        now,
+		}
+		
+		// Don't block the response if analytics fails
+		go h.analyticsService.RecordChatMetrics(metric)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "recorded"})
+}
+
+func getDeviceFromUserAgent(userAgent string) string {
+	userAgent = strings.ToLower(userAgent)
+	if strings.Contains(userAgent, "mobile") || strings.Contains(userAgent, "android") || strings.Contains(userAgent, "iphone") {
+		return "mobile"
+	} else if strings.Contains(userAgent, "tablet") || strings.Contains(userAgent, "ipad") {
+		return "tablet"
+	}
+	return "desktop"
+}
+
+func getMemoryUsage() map[string]interface{} {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	
+	return map[string]interface{}{
+		"alloc_mb":      bToMb(m.Alloc),
+		"total_alloc_mb": bToMb(m.TotalAlloc),
+		"sys_mb":        bToMb(m.Sys),
+		"num_gc":        m.NumGC,
+	}
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }

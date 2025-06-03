@@ -83,17 +83,18 @@
     "ghcr.io/devcontainers-community/npm-features/typescript:1": {
       "version": "latest"
     }
-  }
+  },
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
 
   // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": {
+  "postCreateCommand": {
   //    "server": "npm start",
   //    "db": ["mysql", "-u", "root", "-p", "my database"],
-  //    "go": "go version"
-  // }
+  //    "go": "go version",
+       "air": ["go", "install", "github.com/air-verse/air@latest"],
+  }
 
   // Configure tool-specific properties.
   // "customizations": {},

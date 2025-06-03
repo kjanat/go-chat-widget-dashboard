@@ -251,3 +251,8 @@ air.schema.json
 
 # Miscellaneous
 miscellaneous/
+bin/server
+tmp/build-errors.log
+tmp/main
+chat-dashboard
+chat-widget-dashboard

@@ -91,6 +91,13 @@ func (s *CustomerService) GetAll() ([]models.Customer, error) {
 	return customers, nil
 }
 
+// GetTotalCount returns the total number of customers
+func (s *CustomerService) GetTotalCount() (int64, error) {
+	var count int64
+	err := s.db.QueryRow("SELECT COUNT(*) FROM customers WHERE active = 1").Scan(&count)
+	return count, err
+}
+
 // Create creates a new customer
 func (s *CustomerService) Create(customer *models.Customer) error {
 	// Generate ID and API key

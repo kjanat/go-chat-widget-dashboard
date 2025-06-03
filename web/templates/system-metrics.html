@@ -1,0 +1,300 @@
+<!-- System Metrics Dashboard Widget -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">System Metrics</h5>
+                <small class="text-muted">Updated every 30 seconds</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Memory Usage -->
+                    <div class="col-md-3">
+                        <div class="metric-item">
+                            <div class="metric-icon">
+                                <i class="fas fa-memory" style="color: #28a745;"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h6>Memory Usage</h6>
+                                <span id="memory-usage" class="metric-value">-</span>
+                                <div class="progress mt-2" style="height: 4px;">
+                                    <div id="memory-progress" class="progress-bar bg-success" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Uptime -->
+                    <div class="col-md-3">
+                        <div class="metric-item">
+                            <div class="metric-icon">
+                                <i class="fas fa-clock" style="color: #17a2b8;"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h6>Uptime</h6>
+                                <span id="system-uptime" class="metric-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Connections -->
+                    <div class="col-md-3">
+                        <div class="metric-item">
+                            <div class="metric-icon">
+                                <i class="fas fa-users" style="color: #ffc107;"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h6>Active Sessions</h6>
+                                <span id="active-connections" class="metric-value">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Database Status -->
+                    <div class="col-md-3">
+                        <div class="metric-item">
+                            <div class="metric-icon">
+                                <i id="db-status-icon" class="fas fa-database" style="color: #28a745;"></i>
+                            </div>
+                            <div class="metric-content">
+                                <h6>Database</h6>
+                                <span id="db-status" class="metric-value">Connected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mini Charts Row -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6>Memory Usage Trend</h6>
+                        <canvas id="memoryChart" height="80"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Session Activity</h6>
+                        <canvas id="sessionChart" height="80"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .metric-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        height: 100%;
+    }
+
+    .metric-icon {
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        width: 40px;
+        text-align: center;
+    }
+
+    .metric-content {
+        flex: 1;
+    }
+
+    .metric-content h6 {
+        margin: 0;
+        font-size: 0.875rem;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    .metric-value {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #343a40;
+    }
+
+    .progress {
+        border-radius: 2px;
+    }
+</style>
+
+<script>
+    // System metrics data storage
+    let memoryData = [];
+    let sessionData = [];
+    let memoryChart, sessionChart;
+
+    // Initialize mini charts
+    function initializeCharts() {
+        // Memory Chart
+        const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+        memoryChart = new Chart(memoryCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [ {
+                    label: 'Memory (MB)',
+                    data: [],
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                } ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        display: false,
+                        beginAtZero: true
+                    }
+                },
+                elements: {
+                    point: { radius: 0 }
+                }
+            }
+        });
+
+        // Session Chart
+        const sessionCtx = document.getElementById('sessionChart').getContext('2d');
+        sessionChart = new Chart(sessionCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [ {
+                    label: 'Active Sessions',
+                    data: [],
+                    borderColor: '#ffc107',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                } ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { display: false },
+                    y: {
+                        display: false,
+                        beginAtZero: true
+                    }
+                },
+                elements: {
+                    point: { radius: 0 }
+                }
+            }
+        });
+    }
+
+    // Update system metrics
+    function updateSystemMetrics() {
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+                // Update memory usage
+                const memoryUsage = data.memory_usage.alloc_mb;
+                document.getElementById('memory-usage').textContent = `${memoryUsage} MB`;
+
+                // Update progress bar (assuming max 100MB for demo)
+                const memoryPercent = Math.min((memoryUsage / 100) * 100, 100);
+                document.getElementById('memory-progress').style.width = `${memoryPercent}%`;
+
+                // Update uptime
+                document.getElementById('system-uptime').textContent = formatUptime(data.uptime);
+
+                // Update active connections
+                document.getElementById('active-connections').textContent = data.active_sessions || 0;
+
+                // Update database status
+                const dbStatus = data.database_status;
+                const dbIcon = document.getElementById('db-status-icon');
+                const dbStatusElement = document.getElementById('db-status');
+
+                if (dbStatus === 'connected') {
+                    dbIcon.style.color = '#28a745';
+                    dbStatusElement.textContent = 'Connected';
+                    dbStatusElement.style.color = '#28a745';
+                } else {
+                    dbIcon.style.color = '#dc3545';
+                    dbStatusElement.textContent = 'Disconnected';
+                    dbStatusElement.style.color = '#dc3545';
+                }
+
+                // Update charts
+                updateCharts(memoryUsage, data.active_sessions || 0);
+            })
+            .catch(error => {
+                console.error('Error fetching system metrics:', error);
+            });
+    }
+
+    // Update chart data
+    function updateCharts(memory, sessions) {
+        const now = new Date().toLocaleTimeString();
+
+        // Update memory chart
+        memoryData.push(memory);
+        if (memoryData.length > 20) memoryData.shift();
+
+        memoryChart.data.labels.push(now);
+        if (memoryChart.data.labels.length > 20) memoryChart.data.labels.shift();
+
+        memoryChart.data.datasets[ 0 ].data = [ ...memoryData ];
+        memoryChart.update('none');
+
+        // Update session chart
+        sessionData.push(sessions);
+        if (sessionData.length > 20) sessionData.shift();
+
+        sessionChart.data.labels.push(now);
+        if (sessionChart.data.labels.length > 20) sessionChart.data.labels.shift();
+
+        sessionChart.data.datasets[ 0 ].data = [ ...sessionData ];
+        sessionChart.update('none');
+    }
+
+    // Format uptime string
+    function formatUptime(uptime) {
+        // Parse uptime string like "1h23m45.123s"
+        const regex = /(?:(\d+)h)?(?:(\d+)m)?(?:(\d+(?:\.\d+)?)s)?/;
+        const match = uptime.match(regex);
+
+        if (!match) return uptime;
+
+        const hours = parseInt(match[ 1 ]) || 0;
+        const minutes = parseInt(match[ 2 ]) || 0;
+        const seconds = parseFloat(match[ 3 ]) || 0;
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        } else if (minutes > 0) {
+            return `${minutes}m ${Math.floor(seconds)}s`;
+        } else {
+            return `${Math.floor(seconds)}s`;
+        }
+    }
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize charts after a short delay to ensure Chart.js is loaded
+        setTimeout(() => {
+            initializeCharts();
+            updateSystemMetrics();
+
+            // Update every 30 seconds
+            setInterval(updateSystemMetrics, 30000);
+        }, 1000);
+    });
+</script>

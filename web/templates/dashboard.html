@@ -13,6 +13,11 @@
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <a class="navbar-brand" href="/admin/">Chat Widget Dashboard</a>
+    <div class="navbar-nav">
+        <a class="nav-link active" href="/admin/">Customers</a>
+        <a class="nav-link" href="/admin/analytics">Analytics</a>
+        <a class="nav-link" href="/admin/chat-logs">Chat Logs</a>
+    </div>
       <div class="navbar-nav ms-auto">
         <span class="navbar-text me-3">Welcome, {{.Username}}</span>
         <a class="nav-link" href="/admin/logout">Logout</a>
@@ -21,11 +26,59 @@
   </nav>
 
   <div class="container mt-4">
+    <!-- Quick Analytics Preview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                <div class="card-body">
+                    <i class="bi bi-people fs-1 mb-2"></i>
+                    <h5>Active Sessions</h5>
+                    <h2 id="liveActiveSessions">-</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
+                <div class="card-body">
+                    <i class="bi bi-chat-dots fs-1 mb-2"></i>
+                    <h5>Today's Messages</h5>
+                    <h2 id="liveTodayMessages">-</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                <div class="card-body">
+                    <i class="bi bi-graph-up fs-1 mb-2"></i>
+                    <h5>Conversion Rate</h5>
+                    <h2 id="liveConversionRate">-</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <div class="card-body">
+                    <i class="bi bi-bar-chart fs-1 mb-2"></i>
+                    <h5>Analytics</h5>
+                    <a href="/admin/analytics" class="btn btn-light btn-sm mt-2">View Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Include System Metrics Widget -->
+    {{template "system-metrics.html"}}
+
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h2>Customers</h2>
-      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
-        <i class="bi bi-plus-circle"></i> Add Customer
-      </button>
+    <div>
+        <button class="btn btn-success me-2" onclick="generateSampleData()">
+            <i class="bi bi-database-add"></i> Generate Sample Data
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+            <i class="bi bi-plus-circle"></i> Add Customer
+        </button>
+    </div>
     </div>
 
     <div class="row">
@@ -116,19 +169,62 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+        // Initialize live analytics updates
+        updateLiveAnalytics();
+        setInterval(updateLiveAnalytics, 30000); // Update every 30 seconds
+
+        function updateLiveAnalytics() {
+            fetch('/admin/analytics/live-stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('liveActiveSessions').textContent = data.activeSessions || 0;
+                    // You can add more live stats here
+                })
+                .catch(error => {
+                    console.error('Error fetching live analytics:', error);
+                });
+        }
+
+        function generateSampleData() {
+            if (confirm('This will generate sample analytics data for demonstration. Continue?')) {
+                const button = event.target;
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Generating...';
+
+                fetch('/admin/analytics/generate-sample', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            alert('Sample data generated successfully! Check the Analytics dashboard.');
+                            updateLiveAnalytics(); // Refresh live stats
+                        } else {
+                            alert('Error generating sample data');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error generating sample data:', error);
+                        alert('Error generating sample data');
+                    })
+                    .finally(() => {
+                        button.disabled = false;
+                        button.innerHTML = '<i class="bi bi-database-add"></i> Generate Sample Data';
+                    });
+            }
+        }
+
     function showEmbedCode(customerId) {
       const code = `<script src="${location.origin}/widget.js?customer=${customerId}"></script>
 <div id="chat-widget"></div>`;
-  document.getElementById('embedCode').textContent = code;
-  new bootstrap.Modal(document.getElementById('embedModal')).show();
-  }
+    document.getElementById('embedCode').textContent = code;
+    new bootstrap.Modal(document.getElementById('embedModal')).show();
+    }
 
-  function copyEmbedCode() {
-  const code = document.getElementById('embedCode').textContent;
-  navigator.clipboard.writeText(code).then(() => {
-  alert('Embed code copied to clipboard!');
-  });
-  }
+    function copyEmbedCode() {
+    const code = document.getElementById('embedCode').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+    alert('Embed code copied to clipboard!');
+    });
+    }
   </script>
 </body>
 
