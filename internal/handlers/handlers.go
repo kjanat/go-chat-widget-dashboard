@@ -18,6 +18,8 @@ import (
 	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/kjanat/go-chat-widget-dashboard/internal/templates"
+
 	"github.com/kjanat/go-chat-widget-dashboard/internal/models"
 	"github.com/kjanat/go-chat-widget-dashboard/internal/services"
 )
@@ -173,7 +175,7 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 // DashboardLogin handles admin login
 func (h *Handler) DashboardLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		h.templates.ExecuteTemplate(w, "login.html", nil)
+		templates.LoginPage(r).Render(r.Context(), w)
 		return
 	}
 
@@ -445,22 +447,22 @@ func (h *Handler) Analytics(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error getting analytics stats: %v", err)
 		// Create empty stats to prevent template errors
 		stats = &models.DashboardStats{
-			TotalSessions:     0,
-			ActiveSessions:    0,
-			TotalMessages:     0,
-			AvgResponseTime:   0,
-			AvgSatisfaction:   0,
-			ConversionRate:    0,
-			TopCountries:      []models.CountryStats{},
-			HourlyActivity:    []models.HourlyStats{},
-			CustomerActivity:  []models.CustomerStats{},
-			DeviceBreakdown:   []models.DeviceStats{},
+			TotalSessions:    0,
+			ActiveSessions:   0,
+			TotalMessages:    0,
+			AvgResponseTime:  0,
+			AvgSatisfaction:  0,
+			ConversionRate:   0,
+			TopCountries:     []models.CountryStats{},
+			HourlyActivity:   []models.HourlyStats{},
+			CustomerActivity: []models.CustomerStats{},
+			DeviceBreakdown:  []models.DeviceStats{},
 		}
 	}
 
 	data := map[string]interface{}{
-		"Stats":    stats,
-		"Username": session.Values["username"],
+		"Stats":     stats,
+		"Username":  session.Values["username"],
 		"TimeRange": timeRange,
 	}
 
@@ -509,7 +511,7 @@ func (h *Handler) AnalyticsLiveStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := map[string]interface{}{
-		"activeSessions":  activeSessions,
+		"activeSessions": activeSessions,
 		"recentActivity": recentActivity,
 	}
 
@@ -540,15 +542,15 @@ func (h *Handler) GenerateSampleAnalytics(w http.ResponseWriter, r *http.Request
 func (h *Handler) Landing(w http.ResponseWriter, r *http.Request) {
 	// Get some basic stats for the landing page
 	totalCustomers, _ := h.customerService.GetTotalCount()
-	
+
 	// Get analytics stats if available
 	dashboardStats, _ := h.analyticsService.GetDashboardStats("all")
-	
+
 	data := map[string]interface{}{
-		"TotalCustomers":   totalCustomers,
-		"TotalSessions":    dashboardStats.TotalSessions,
-		"ActiveSessions":   dashboardStats.ActiveSessions,
-		"AvgResponseTime":  dashboardStats.AvgResponseTime,
+		"TotalCustomers":  totalCustomers,
+		"TotalSessions":   dashboardStats.TotalSessions,
+		"ActiveSessions":  dashboardStats.ActiveSessions,
+		"AvgResponseTime": dashboardStats.AvgResponseTime,
 	}
 
 	h.templates.ExecuteTemplate(w, "landing.html", data)
@@ -572,18 +574,18 @@ func (h *Handler) APIStatus(w http.ResponseWriter, r *http.Request) {
 	// Get basic stats
 	totalCustomers, _ := h.customerService.GetTotalCount()
 	dashboardStats, _ := h.analyticsService.GetDashboardStats("all")
-	
+
 	status := map[string]interface{}{
-		"api_version":      "v1.0.0",
-		"status":           "operational",
-		"timestamp":        time.Now().Unix(),
-		"uptime":           time.Since(h.startTime).String(),
-		"total_customers":  totalCustomers,
-		"total_sessions":   dashboardStats.TotalSessions,
-		"active_sessions":  dashboardStats.ActiveSessions,
+		"api_version":       "v1.0.0",
+		"status":            "operational",
+		"timestamp":         time.Now().Unix(),
+		"uptime":            time.Since(h.startTime).String(),
+		"total_customers":   totalCustomers,
+		"total_sessions":    dashboardStats.TotalSessions,
+		"active_sessions":   dashboardStats.ActiveSessions,
 		"avg_response_time": dashboardStats.AvgResponseTime,
-		"database_status":  "connected",
-		"memory_usage":     getMemoryUsage(),
+		"database_status":   "connected",
+		"memory_usage":      getMemoryUsage(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -604,7 +606,7 @@ func (h *Handler) APIDocs(w http.ResponseWriter, r *http.Request) {
 				"response":    "Returns application health status",
 			},
 			{
-				"method":      "GET", 
+				"method":      "GET",
 				"path":        "/api/status",
 				"description": "System status and statistics",
 				"response":    "Returns comprehensive system metrics",
@@ -670,7 +672,7 @@ func (h *Handler) WidgetUsage(w http.ResponseWriter, r *http.Request) {
 			PageURL:          usage.PageURL,
 			CreatedAt:        now,
 		}
-		
+
 		// Don't block the response if analytics fails
 		go h.analyticsService.RecordChatMetrics(metric)
 	}
@@ -692,12 +694,12 @@ func getDeviceFromUserAgent(userAgent string) string {
 func getMemoryUsage() map[string]interface{} {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	
+
 	return map[string]interface{}{
-		"alloc_mb":      bToMb(m.Alloc),
+		"alloc_mb":       bToMb(m.Alloc),
 		"total_alloc_mb": bToMb(m.TotalAlloc),
-		"sys_mb":        bToMb(m.Sys),
-		"num_gc":        m.NumGC,
+		"sys_mb":         bToMb(m.Sys),
+		"num_gc":         m.NumGC,
 	}
 }
 

@@ -10,4 +10,7 @@ require (
 	golang.org/x/crypto v0.38.0
 )
 
-require github.com/gorilla/securecookie v1.1.2 // indirect
+require (
+	github.com/a-h/templ v0.3.894 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
+)
