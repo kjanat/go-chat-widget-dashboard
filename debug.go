@@ -1,5 +1,4 @@
-//go:build debug
-
+// go:build debug
 package main
 
-// This file enables optional debug builds.
+// This file is intentionally left blank to support optional debug utilities.

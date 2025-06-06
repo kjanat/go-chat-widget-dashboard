@@ -1,6 +1,8 @@
 package models
 
 import (
+	"encoding/json"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -63,5 +65,46 @@ func TestChatMessageResponse(t *testing.T) {
 
 	if resp.Emotion != "happy" {
 		t.Errorf("Expected emotion to be 'happy', got %s", resp.Emotion)
+	}
+}
+
+func TestBrandColorsToJSON(t *testing.T) {
+	c := &Customer{BrandColors: "primary: #ff0000\nsecondary: #00ff00"}
+	jsonStr := c.BrandColorsToJSON()
+
+	var got map[string]string
+	if err := json.Unmarshal([]byte(jsonStr), &got); err != nil {
+		t.Fatalf("invalid json returned: %v", err)
+	}
+
+	want := map[string]string{
+		"primary":    "#ff0000",
+		"secondary":  "#00ff00",
+		"background": "#ffffff",
+		"text":       "#212529",
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("BrandColorsToJSON() = %#v, want %#v", got, want)
+	}
+}
+
+func TestSetBrandColorsFromJSON(t *testing.T) {
+	jsonInput := `{"primary":"#ff0000","secondary":"#00ff00","background":"#ffffff","text":"#212529"}`
+	c := &Customer{}
+	c.SetBrandColorsFromJSON(jsonInput)
+
+	result := c.BrandColorsToJSON()
+
+	var got, want map[string]string
+	if err := json.Unmarshal([]byte(result), &got); err != nil {
+		t.Fatalf("invalid json from result: %v", err)
+	}
+	if err := json.Unmarshal([]byte(jsonInput), &want); err != nil {
+		t.Fatalf("invalid input json: %v", err)
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("round trip result = %#v, want %#v", got, want)
 	}
 }
