@@ -154,10 +154,18 @@ func (s *CustomerService) ValidateOrigin(origin, customerID string) bool {
 		return false
 	}
 
+	// If no domains are configured, reject the origin
+	if strings.TrimSpace(allowedDomains) == "" {
+		return false
+	}
+
 	// Check if origin matches any allowed domain
 	domains := strings.Split(allowedDomains, ",")
 	for _, domain := range domains {
 		domain = strings.TrimSpace(domain)
+		if domain == "" {
+			continue
+		}
 		if domain == "*" || strings.Contains(origin, domain) {
 			return true
 		}

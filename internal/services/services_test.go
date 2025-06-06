@@ -2,6 +2,8 @@ package services
 
 import (
 	"testing"
+
+	"github.com/kjanat/go-chat-widget-dashboard/internal/database"
 )
 
 func TestOpenAIService_GenerateResponse(t *testing.T) {
@@ -47,5 +49,40 @@ func TestGenerateID(t *testing.T) {
 	// IDs should be different (with very high probability)
 	if id1 == id2 {
 		t.Error("Generated IDs should be unique")
+	}
+}
+
+// helper to setup DB and customer service with configurable allowed domains
+func setupCustomerService(t *testing.T, allowed string) (*CustomerService, *database.DB, string) {
+	db, err := database.New(":memory:")
+	if err != nil {
+		t.Fatalf("failed to create database: %v", err)
+	}
+
+	customerID := "c1"
+	_, err = db.Exec(`INSERT INTO customers (id, name, email, created_at, brand_colors, logo_url, model_path, animations, openai_prompt, allowed_domains, api_key, active) VALUES (?, 'Test', 'test@example.com', datetime('now'), '', '', '', '', '', ?, 'key', 1)`,
+		customerID, allowed)
+	if err != nil {
+		t.Fatalf("failed to insert customer: %v", err)
+	}
+
+	return NewCustomerService(db.DB), db, customerID
+}
+
+func TestValidateOriginWildcard(t *testing.T) {
+	svc, db, id := setupCustomerService(t, "*")
+	defer db.Close()
+
+	if !svc.ValidateOrigin("https://example.com", id) {
+		t.Error("expected origin to be allowed when wildcard is set")
+	}
+}
+
+func TestValidateOriginEmpty(t *testing.T) {
+	svc, db, id := setupCustomerService(t, "")
+	defer db.Close()
+
+	if svc.ValidateOrigin("https://example.com", id) {
+		t.Error("expected origin to be rejected when allowed_domains is empty")
 	}
 }
