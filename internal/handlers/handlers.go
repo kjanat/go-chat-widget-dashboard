@@ -102,7 +102,10 @@ func (h *Handler) WidgetJS(w http.ResponseWriter, r *http.Request) {
 		WSEndpoint:  fmt.Sprintf("wss://%s/ws/%s", r.Host, customer.ID),
 	}
 
-	h.templates.ExecuteTemplate(w, "widget.js", config)
+	if err := h.templates.ExecuteTemplate(w, "widget.js", config); err != nil {
+		http.Error(w, "Error generating widget", http.StatusInternalServerError)
+		log.Printf("error executing widget template: %v", err)
+	}
 }
 
 // WebSocket handles chat WebSocket connections
@@ -120,7 +123,11 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 		log.Println("WebSocket upgrade error:", err)
 		return
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Printf("error closing websocket: %v", err)
+		}
+	}()
 
 	// Create session
 	userID := r.Header.Get("X-User-ID")
@@ -165,11 +172,16 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 			Emotion:   emotion,
 			MessageID: messageID,
 		}
-		conn.WriteJSON(msgResp)
+		if err := conn.WriteJSON(msgResp); err != nil {
+			log.Printf("error sending websocket message: %v", err)
+			break
+		}
 	}
 
 	// End session
-	h.chatService.EndSession(sessionID)
+	if err := h.chatService.EndSession(sessionID); err != nil {
+		log.Println("error ending session:", err)
+	}
 }
 
 // DashboardLogin handles admin login
@@ -194,7 +206,9 @@ func (h *Handler) DashboardLogin(w http.ResponseWriter, r *http.Request) {
 	session, _ := h.store.Get(r, "admin-session")
 	session.Values["user_id"] = user.ID
 	session.Values["username"] = user.Username
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+	}
 
 	http.Redirect(w, r, "/admin/", http.StatusSeeOther)
 }
@@ -218,7 +232,9 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		"Customers": customers,
 	}
 
-	h.templates.ExecuteTemplate(w, "dashboard.html", data)
+	if err := h.templates.ExecuteTemplate(w, "dashboard.html", data); err != nil {
+		log.Printf("error executing dashboard template: %v", err)
+	}
 }
 
 // DashboardLogout handles admin logout
@@ -229,7 +245,9 @@ func (h *Handler) DashboardLogout(w http.ResponseWriter, r *http.Request) {
 	session.Values["user_id"] = nil
 	session.Values["username"] = nil
 	session.Options.MaxAge = -1 // This deletes the session
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+	}
 
 	http.Redirect(w, r, "/admin/login", http.StatusSeeOther)
 }
@@ -251,7 +269,9 @@ func (h *Handler) CustomerEdit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.templates.ExecuteTemplate(w, "customer-edit.html", customer)
+		if err := h.templates.ExecuteTemplate(w, "customer-edit.html", customer); err != nil {
+			log.Printf("error executing customer edit template: %v", err)
+		}
 		return
 	}
 
@@ -330,10 +350,18 @@ func (h *Handler) ModelUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Printf("error closing uploaded file: %v", err)
+		}
+	}()
 
 	// Create models directory if it doesn't exist
-	os.MkdirAll("./uploads/models", 0755)
+	if err := os.MkdirAll("./uploads/models", 0755); err != nil {
+		log.Printf("error creating models directory: %v", err)
+		http.Error(w, "Failed to create models directory", http.StatusInternalServerError)
+		return
+	}
 
 	// Save file
 	filename := fmt.Sprintf("%s_%s", customerID, handler.Filename)
@@ -344,7 +372,11 @@ func (h *Handler) ModelUpload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer dst.Close()
+	defer func() {
+		if err := dst.Close(); err != nil {
+			log.Printf("error closing destination file: %v", err)
+		}
+	}()
 
 	_, err = io.Copy(dst, file)
 	if err != nil {
@@ -361,10 +393,12 @@ func (h *Handler) ModelUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"status": "success",
 		"path":   modelPath,
-	})
+	}); err != nil {
+		log.Printf("error encoding model upload response: %v", err)
+	}
 }
 
 // ModelDownload handles 3D model downloads
@@ -426,7 +460,9 @@ func (h *Handler) ChatLogs(w http.ResponseWriter, r *http.Request) {
 		"CustomerID": customerID,
 	}
 
-	h.templates.ExecuteTemplate(w, "chat-logs.html", data)
+	if err := h.templates.ExecuteTemplate(w, "chat-logs.html", data); err != nil {
+		log.Printf("error executing chat logs template: %v", err)
+	}
 }
 
 // Analytics handles the analytics dashboard
@@ -519,7 +555,9 @@ func (h *Handler) AnalyticsLiveStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("error encoding analytics live stats: %v", err)
+	}
 }
 
 // GenerateSampleAnalytics creates sample data for demonstration
@@ -538,7 +576,9 @@ func (h *Handler) GenerateSampleAnalytics(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"status": "success"}); err != nil {
+		log.Printf("error encoding sample analytics response: %v", err)
+	}
 }
 
 // Landing serves the marketing landing page
@@ -556,7 +596,9 @@ func (h *Handler) Landing(w http.ResponseWriter, r *http.Request) {
 		"AvgResponseTime": dashboardStats.AvgResponseTime,
 	}
 
-	h.templates.ExecuteTemplate(w, "landing.html", data)
+	if err := h.templates.ExecuteTemplate(w, "landing.html", data); err != nil {
+		log.Printf("error executing landing template: %v", err)
+	}
 }
 
 // Health returns the application health status
@@ -569,7 +611,9 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(health)
+	if err := json.NewEncoder(w).Encode(health); err != nil {
+		log.Printf("error encoding health response: %v", err)
+	}
 }
 
 // APIStatus returns API statistics and system information
@@ -592,7 +636,9 @@ func (h *Handler) APIStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(status)
+	if err := json.NewEncoder(w).Encode(status); err != nil {
+		log.Printf("error encoding api status: %v", err)
+	}
 }
 
 // APIDocs serves a simple API documentation page
@@ -637,7 +683,9 @@ func (h *Handler) APIDocs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(docs)
+	if err := json.NewEncoder(w).Encode(docs); err != nil {
+		log.Printf("error encoding docs: %v", err)
+	}
 }
 
 // WidgetUsage tracks widget usage statistics
@@ -677,11 +725,17 @@ func (h *Handler) WidgetUsage(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Don't block the response if analytics fails
-		go h.analyticsService.RecordChatMetrics(metric)
+		go func() {
+			if err := h.analyticsService.RecordChatMetrics(metric); err != nil {
+				log.Printf("error recording chat metrics: %v", err)
+			}
+		}()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "recorded"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"status": "recorded"}); err != nil {
+		log.Printf("error encoding widget usage response: %v", err)
+	}
 }
 
 func getDeviceFromUserAgent(userAgent string) string {

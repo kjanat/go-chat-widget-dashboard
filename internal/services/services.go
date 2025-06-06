@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -72,7 +73,11 @@ func (s *CustomerService) GetAll() ([]models.Customer, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
 
 	var customers []models.Customer
 	for rows.Next() {
@@ -231,7 +236,11 @@ func (s *ChatService) GetSessions(customerID string, limit int) ([]map[string]in
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
 
 	var sessions []map[string]interface{}
 	for rows.Next() {
