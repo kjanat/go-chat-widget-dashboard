@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
 	"log"
 	"strings"
 	"time"
@@ -134,7 +135,34 @@ func (s *CustomerService) Update(id string, customer *models.Customer) error {
 	_, err := s.db.Exec(`
 		UPDATE customers SET
 			name = ?, email = ?, brand_colors = ?, logo_url = ?,
-			openai_prompt = ?, allowed_domains = ?, active = ?
+	// Parse the origin to extract the hostname
+	u, err := url.Parse(origin)
+	if err != nil {
+		return false
+	}
+	host := u.Hostname()
+
+		if domain == "*" {
+			return true
+		}
+
+		// Handle wildcard subdomains like *.example.com
+		if strings.HasPrefix(domain, "*.") {
+			base := strings.TrimPrefix(domain, "*.")
+			if host == base || strings.HasSuffix(host, "."+base) {
+				return true
+			}
+			continue
+		}
+
+		// Normalize allowed domain by parsing any scheme
+		dURL, derr := url.Parse(domain)
+		allowedHost := domain
+		if derr == nil && dURL.Hostname() != "" {
+			allowedHost = dURL.Hostname()
+		}
+
+		if host == allowedHost {
 		WHERE id = ?
 	`,
 		customer.Name, customer.Email, customer.BrandColors, customer.LogoURL,
@@ -159,10 +187,18 @@ func (s *CustomerService) ValidateOrigin(origin, customerID string) bool {
 		return false
 	}
 
+	// If no domains are configured, reject the origin
+	if strings.TrimSpace(allowedDomains) == "" {
+		return false
+	}
+
 	// Check if origin matches any allowed domain
 	domains := strings.Split(allowedDomains, ",")
 	for _, domain := range domains {
 		domain = strings.TrimSpace(domain)
+		if domain == "" {
+			continue
+		}
 		if domain == "*" || strings.Contains(origin, domain) {
 			return true
 		}
