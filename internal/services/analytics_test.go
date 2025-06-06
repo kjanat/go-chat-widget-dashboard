@@ -55,11 +55,38 @@ func TestGetTopCountriesAndDeviceBreakdown(t *testing.T) {
 
 	cases := []string{"", "WHERE created_at >= date('now', '-1 day')"}
 	for _, clause := range cases {
-		if _, err := svc.getTopCountries(clause); err != nil {
+		countries, err := svc.getTopCountries(clause)
+		if err != nil {
 			t.Errorf("getTopCountries failed with clause %q: %v", clause, err)
+			continue
 		}
-		if _, err := svc.getDeviceBreakdown(clause); err != nil {
+		if len(countries) != 2 {
+			t.Errorf("expected 2 countries for clause %q, got %d", clause, len(countries))
+		}
+
+		counts := map[string]int64{}
+		for _, c := range countries {
+			counts[c.Country] = c.SessionCount
+		}
+		if counts["USA"] != 1 || counts["Canada"] != 1 {
+			t.Errorf("unexpected country counts for clause %q: %+v", clause, counts)
+		}
+
+		devices, err := svc.getDeviceBreakdown(clause)
+		if err != nil {
 			t.Errorf("getDeviceBreakdown failed with clause %q: %v", clause, err)
+			continue
+		}
+		if len(devices) != 2 {
+			t.Errorf("expected 2 device types for clause %q, got %d", clause, len(devices))
+		}
+
+		devCounts := map[string]int64{}
+		for _, d := range devices {
+			devCounts[d.DeviceType] = d.SessionCount
+		}
+		if devCounts["desktop"] != 1 || devCounts["mobile"] != 1 {
+			t.Errorf("unexpected device counts for clause %q: %+v", clause, devCounts)
 		}
 	}
 }

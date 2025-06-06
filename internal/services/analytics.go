@@ -91,6 +91,16 @@ func (s *AnalyticsService) GetDashboardStats(timeRange string) (*models.Dashboar
 	return stats, nil
 }
 
+// prependWhereOrAnd returns "WHERE" if the provided clause is empty,
+// otherwise it appends " AND" to the existing clause. This helps build
+// conditional SQL statements without duplicating logic across queries.
+func (s *AnalyticsService) prependWhereOrAnd(whereClause string) string {
+	if whereClause == "" {
+		return "WHERE"
+	}
+	return whereClause + " AND"
+}
+
 func (s *AnalyticsService) getBasicStats(stats *models.DashboardStats, whereClause string) error {
 	query := fmt.Sprintf(`
 		SELECT 
@@ -118,24 +128,19 @@ func (s *AnalyticsService) getBasicStats(stats *models.DashboardStats, whereClau
 }
 
 func (s *AnalyticsService) getTopCountries(whereClause string) ([]models.CountryStats, error) {
-	clause := whereClause
-	if clause == "" {
-		clause = "WHERE"
-	} else {
-		clause += " AND"
-	}
+	fullClause := s.prependWhereOrAnd(whereClause)
 
 	query := fmt.Sprintf(`
-                SELECT
-                        country,
-                        COUNT(DISTINCT session_id) as session_count,
-                        COALESCE(SUM(message_count), 0) as message_count
-                FROM chat_metrics
-                %s country != ''
-                GROUP BY country
-                ORDER BY session_count DESC
-                LIMIT 10
-        `, clause)
+               SELECT
+                       country,
+                       COUNT(DISTINCT session_id) as session_count,
+                       COALESCE(SUM(message_count), 0) as message_count
+               FROM chat_metrics
+               %s country != ''
+               GROUP BY country
+               ORDER BY session_count DESC
+               LIMIT 10
+       `, fullClause)
 
 	rows, err := s.db.Query(query)
 	if err != nil {
@@ -252,22 +257,17 @@ func (s *AnalyticsService) getCustomerActivity(whereClause string) ([]models.Cus
 }
 
 func (s *AnalyticsService) getDeviceBreakdown(whereClause string) ([]models.DeviceStats, error) {
-	clause := whereClause
-	if clause == "" {
-		clause = "WHERE"
-	} else {
-		clause += " AND"
-	}
+	fullClause := s.prependWhereOrAnd(whereClause)
 
 	query := fmt.Sprintf(`
                 SELECT
                         device_type,
                         COUNT(DISTINCT session_id) as session_count
-                FROM chat_metrics
-                %s device_type != ''
-                GROUP BY device_type
-                ORDER BY session_count DESC
-        `, clause)
+               FROM chat_metrics
+               %s device_type != ''
+               GROUP BY device_type
+               ORDER BY session_count DESC
+       `, fullClause)
 
 	rows, err := s.db.Query(query)
 	if err != nil {
