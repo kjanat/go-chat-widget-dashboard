@@ -232,6 +232,8 @@ uploads/models/
 
 wiki/
 db/
+!db/
+!db/.gitkeep
 *.db
 *.db-shm
 *.db-wal
