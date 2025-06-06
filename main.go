@@ -27,7 +27,7 @@ var templateFiles embed.FS
 
 func main() {
 	log.Println("Starting Go Chat Widget Dashboard...")
-	
+
 	// Initialize database
 	log.Println("Initializing database...")
 	db, err := database.New("./db/chat_widget.db")
@@ -117,7 +117,7 @@ func setupRoutes(h *handlers.Handler) *mux.Router {
 
 	// Landing page
 	router.HandleFunc("/", h.Landing).Methods("GET")
-	
+
 	// Direct admin access
 	router.HandleFunc("/dashboard", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/admin/", http.StatusSeeOther)
