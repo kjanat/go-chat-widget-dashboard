@@ -27,7 +27,7 @@ A complete, production-ready chat widget system built with Go, featuring a 3D av
 - **🧪 Test-Driven Development**: Comprehensive test coverage
 - **🔄 Hot Reload**: Development mode with automatic reloading
 - **🐳 Docker Ready**: Complete containerization with Docker Compose
-- **📦 Zero Dependencies**: Self-contained with embedded static files
+- **📦 Minimal External Dependencies**: Relies on Gorilla packages and SQLite, with embedded static files for easy deployment
 
 ## 📁 Project Structure
 
