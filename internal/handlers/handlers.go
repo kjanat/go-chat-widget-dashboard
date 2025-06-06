@@ -173,7 +173,7 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 			MessageID: messageID,
 		}
 		if err := conn.WriteJSON(msgResp); err != nil {
-			log.Println("error sending websocket message:", err)
+			log.Printf("error sending websocket message: %v", err)
 			break
 		}
 	}
