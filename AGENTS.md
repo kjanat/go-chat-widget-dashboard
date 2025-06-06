@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-This project is structured with Go handlers and templates embedded from the `web` folder.
+This project is structured with Go handlers. HTML components live in `internal/templates` as `.templ` files generated with templ.
 
 ## Development
 
