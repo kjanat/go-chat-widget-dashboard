@@ -31,7 +31,11 @@ func insertMetric(t *testing.T, svc *AnalyticsService, m *models.ChatMetrics) {
 
 func TestGetTopCountriesAndDeviceBreakdown(t *testing.T) {
 	svc, db := setupAnalyticsTest(t)
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatalf("failed to close db: %v", err)
+		}
+	}()
 
 	now := time.Now()
 	insertMetric(t, svc, &models.ChatMetrics{
