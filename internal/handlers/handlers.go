@@ -175,7 +175,10 @@ func (h *Handler) WebSocket(w http.ResponseWriter, r *http.Request) {
 // DashboardLogin handles admin login
 func (h *Handler) DashboardLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		templates.LoginPage(r).Render(r.Context(), w)
+		if err := templates.LoginPage(r).Render(r.Context(), w); err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 		return
 	}
 
