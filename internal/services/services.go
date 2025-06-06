@@ -107,7 +107,7 @@ func (s *CustomerService) Create(customer *models.Customer) error {
 
 	// Set default brand colors if empty
 	if customer.BrandColors == "" {
-		customer.BrandColors = "primary: #007bff\nsecondary: #6c757d\nbackground: #ffffff\ntext: #212529"
+		customer.BrandColors = models.DefaultBrandColorsSimple()
 	}
 
 	_, err := s.db.Exec(`
