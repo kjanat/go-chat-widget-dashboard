@@ -146,7 +146,11 @@ func (s *AnalyticsService) getTopCountries(whereClause string) ([]models.Country
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
 
 	var countries []models.CountryStats
 	for rows.Next() {
@@ -177,7 +181,11 @@ func (s *AnalyticsService) getHourlyActivity(whereClause string) ([]models.Hourl
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
 
 	hourlyMap := make(map[int]models.HourlyStats)
 	for rows.Next() {
@@ -234,7 +242,11 @@ func (s *AnalyticsService) getCustomerActivity(whereClause string) ([]models.Cus
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
 
 	var customers []models.CustomerStats
 	for rows.Next() {
@@ -273,7 +285,11 @@ func (s *AnalyticsService) getDeviceBreakdown(whereClause string) ([]models.Devi
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
 
 	var devices []models.DeviceStats
 	var totalSessions int64
@@ -395,7 +411,11 @@ func (s *AnalyticsService) getCustomers() ([]models.Customer, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
 
 	var customers []models.Customer
 	for rows.Next() {
