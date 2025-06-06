@@ -16,8 +16,8 @@ This project is structured with Go handlers. HTML components live in `internal/t
 
 ## Templates and Templ
 
-- HTML templates live in `web/templates` and are loaded with `html/template`.
-- New `.templ` files belong in `internal/templates`.
+- HTML templates live in `web/templates` and are loaded with `html/template` (standard Go templates).
+- New `.templ` files belong in `internal/templates` and use the templ DSL.
 - After creating or editing a `.templ` file, run:
   ```bash
   templ generate ./internal/templates/*.templ
