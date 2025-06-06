@@ -103,6 +103,7 @@ func (h *Handler) WidgetJS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.templates.ExecuteTemplate(w, "widget.js", config); err != nil {
+		http.Error(w, "Error generating widget", http.StatusInternalServerError)
 		log.Printf("error executing widget template: %v", err)
 	}
 }
@@ -358,6 +359,8 @@ func (h *Handler) ModelUpload(w http.ResponseWriter, r *http.Request) {
 	// Create models directory if it doesn't exist
 	if err := os.MkdirAll("./uploads/models", 0755); err != nil {
 		log.Printf("error creating models directory: %v", err)
+		http.Error(w, "Failed to create models directory", http.StatusInternalServerError)
+		return
 	}
 
 	// Save file
