@@ -408,10 +408,10 @@
         // Analytics data from server
         const analyticsData = {
             hourlyActivity: {{ json .Stats.HourlyActivity }},
-        topCountries: { { json.Stats.TopCountries; } },
-        deviceBreakdown: { { json.Stats.DeviceBreakdown; } },
-        customerActivity: { { json.Stats.CustomerActivity; } }
-    };
+            topCountries: {{ json .Stats.TopCountries }},
+            deviceBreakdown: {{ json .Stats.DeviceBreakdown }},
+            customerActivity: {{ json .Stats.CustomerActivity }}
+        };
 
         // Initialize charts
         initializeCharts();
