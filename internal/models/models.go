@@ -25,7 +25,7 @@ type Customer struct {
 // BrandColorsToJSON converts simple key-value format to JSON for the widget
 func (c *Customer) BrandColorsToJSON() string {
 	if c.BrandColors == "" {
-		return `{"primary": "#007bff", "secondary": "#6c757d", "background": "#ffffff", "text": "#212529"}`
+		return DefaultBrandColorsJSON()
 	}
 
 	colors := make(map[string]string)
@@ -51,16 +51,16 @@ func (c *Customer) BrandColorsToJSON() string {
 
 	// Set defaults if missing
 	if _, exists := colors["primary"]; !exists {
-		colors["primary"] = "#007bff"
+		colors["primary"] = DefaultBrandColors["primary"]
 	}
 	if _, exists := colors["secondary"]; !exists {
-		colors["secondary"] = "#6c757d"
+		colors["secondary"] = DefaultBrandColors["secondary"]
 	}
 	if _, exists := colors["background"]; !exists {
-		colors["background"] = "#ffffff"
+		colors["background"] = DefaultBrandColors["background"]
 	}
 	if _, exists := colors["text"]; !exists {
-		colors["text"] = "#212529"
+		colors["text"] = DefaultBrandColors["text"]
 	}
 
 	jsonBytes, _ := json.Marshal(colors)
@@ -70,13 +70,13 @@ func (c *Customer) BrandColorsToJSON() string {
 // SetBrandColorsFromJSON converts JSON to simple format (for backwards compatibility)
 func (c *Customer) SetBrandColorsFromJSON(jsonStr string) {
 	if jsonStr == "" {
-		c.BrandColors = "primary: #007bff\nsecondary: #6c757d\nbackground: #ffffff\ntext: #212529"
+		c.BrandColors = DefaultBrandColorsSimple()
 		return
 	}
 
 	var colors map[string]string
 	if err := json.Unmarshal([]byte(jsonStr), &colors); err != nil {
-		c.BrandColors = "primary: #007bff\nsecondary: #6c757d\nbackground: #ffffff\ntext: #212529"
+		c.BrandColors = DefaultBrandColorsSimple()
 		return
 	}
 
