@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/kjanat/go-chat-widget-dashboard/internal/models"
 )
 
@@ -298,7 +299,7 @@ func (s *AuthService) GetAdminUser(username string) (*models.AdminUser, error) {
 
 // Helper functions
 func generateID() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
+	return uuid.NewString()
 }
 
 func generateAPIKey() string {
