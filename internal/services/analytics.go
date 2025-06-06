@@ -118,17 +118,24 @@ func (s *AnalyticsService) getBasicStats(stats *models.DashboardStats, whereClau
 }
 
 func (s *AnalyticsService) getTopCountries(whereClause string) ([]models.CountryStats, error) {
+	clause := whereClause
+	if clause == "" {
+		clause = "WHERE"
+	} else {
+		clause += " AND"
+	}
+
 	query := fmt.Sprintf(`
-		SELECT 
-			country,
-			COUNT(DISTINCT session_id) as session_count,
-			COALESCE(SUM(message_count), 0) as message_count
-		FROM chat_metrics 
-		%s AND country != ''
-		GROUP BY country
-		ORDER BY session_count DESC
-		LIMIT 10
-	`, whereClause)
+                SELECT
+                        country,
+                        COUNT(DISTINCT session_id) as session_count,
+                        COALESCE(SUM(message_count), 0) as message_count
+                FROM chat_metrics
+                %s country != ''
+                GROUP BY country
+                ORDER BY session_count DESC
+                LIMIT 10
+        `, clause)
 
 	rows, err := s.db.Query(query)
 	if err != nil {
@@ -245,15 +252,22 @@ func (s *AnalyticsService) getCustomerActivity(whereClause string) ([]models.Cus
 }
 
 func (s *AnalyticsService) getDeviceBreakdown(whereClause string) ([]models.DeviceStats, error) {
+	clause := whereClause
+	if clause == "" {
+		clause = "WHERE"
+	} else {
+		clause += " AND"
+	}
+
 	query := fmt.Sprintf(`
-		SELECT 
-			device_type,
-			COUNT(DISTINCT session_id) as session_count
-		FROM chat_metrics 
-		%s AND device_type != ''
-		GROUP BY device_type
-		ORDER BY session_count DESC
-	`, whereClause)
+                SELECT
+                        device_type,
+                        COUNT(DISTINCT session_id) as session_count
+                FROM chat_metrics
+                %s device_type != ''
+                GROUP BY device_type
+                ORDER BY session_count DESC
+        `, clause)
 
 	rows, err := s.db.Query(query)
 	if err != nil {
