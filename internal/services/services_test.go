@@ -71,7 +71,7 @@ func setupCustomerService(t *testing.T, allowed string) (*CustomerService, *data
 
 func TestValidateOriginWildcard(t *testing.T) {
 	svc, db, id := setupCustomerService(t, "*")
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if !svc.ValidateOrigin("https://example.com", id) {
 		t.Error("expected origin to be allowed when wildcard is set")
@@ -80,9 +80,35 @@ func TestValidateOriginWildcard(t *testing.T) {
 
 func TestValidateOriginEmpty(t *testing.T) {
 	svc, db, id := setupCustomerService(t, "")
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if svc.ValidateOrigin("https://example.com", id) {
 		t.Error("expected origin to be rejected when allowed_domains is empty")
+	}
+}
+
+func TestValidateOriginMultipleDomains(t *testing.T) {
+	svc, db, id := setupCustomerService(t, "example.com,allowed.com")
+	defer func() { _ = db.Close() }()
+
+	if !svc.ValidateOrigin("https://allowed.com", id) {
+		t.Error("expected allowed.com to be permitted")
+	}
+
+	if svc.ValidateOrigin("https://bad.com", id) {
+		t.Error("expected bad.com to be rejected")
+	}
+}
+
+func TestValidateOriginStrictMatch(t *testing.T) {
+	svc, db, id := setupCustomerService(t, "example.com")
+	defer func() { _ = db.Close() }()
+
+	if svc.ValidateOrigin("https://evil-example.com", id) {
+		t.Error("did not expect partial domain match to be allowed")
+	}
+
+	if !svc.ValidateOrigin("https://example.com", id) {
+		t.Error("expected exact domain match to be allowed")
 	}
 }
