@@ -70,11 +70,14 @@ func main() {
 		store,
 		templates,
 	)
+	
+	// Initialize Templ handlers for modern HTMX integration
+	templHandlers := handlers.NewTemplHandlers(analyticsService)
 	log.Println("Handlers initialized successfully")
 
 	// Setup routes
 	log.Println("Setting up routes...")
-	router := setupRoutes(handler)
+	router := setupRoutes(handler, templHandlers)
 	log.Println("Routes setup complete")
 
 	// Start server
@@ -83,29 +86,40 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }
 
-func setupRoutes(h *handlers.Handler) *mux.Router {
+func setupRoutes(h *handlers.Handler, th *handlers.TemplHandlers) *mux.Router {
 	router := mux.NewRouter()
 
 	// Widget routes
 	router.HandleFunc("/widget.js", h.WidgetJS).Methods("GET")
 	router.HandleFunc("/ws/{customerID}", h.WebSocket)
-	router.HandleFunc("/api/widget/usage", h.WidgetUsage).Methods("POST")
+	router.HandleFunc("/api/widget/usage", th.TrackUsageHandler).Methods("POST")
 
 	// Health and status endpoints
-	router.HandleFunc("/health", h.Health).Methods("GET")
-	router.HandleFunc("/api/status", h.APIStatus).Methods("GET")
+	router.HandleFunc("/health", th.HealthHandler).Methods("GET")
+	router.HandleFunc("/api/status", th.StatusHandler).Methods("GET")
 	router.HandleFunc("/api/docs", h.APIDocs).Methods("GET")
 
-	// Static files
+	// Static files and assets
 	staticFS, _ := fs.Sub(staticFiles, "web/static")
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 	router.PathPrefix("/models/").Handler(http.StripPrefix("/models/", http.FileServer(http.Dir("./uploads/models/"))))
+	
+	// Serve built assets from dist directory
+	router.PathPrefix("/dist/").Handler(http.StripPrefix("/dist/", http.FileServer(http.Dir("./dist/"))))
 
-	// Admin routes
+	// HTMX API endpoints for dynamic updates
+	api := router.PathPrefix("/api").Subrouter()
+	api.HandleFunc("/metrics", th.MetricsHandler).Methods("GET")
+	api.HandleFunc("/conversations", th.ConversationsHandler).Methods("GET")
+	api.HandleFunc("/activity-chart", th.ActivityChartHandler).Methods("GET")
+	api.HandleFunc("/response-times-chart", th.ResponseTimesChartHandler).Methods("GET")
+	api.HandleFunc("/system-health", th.SystemHealthHandler).Methods("GET")
+
+	// Admin routes (legacy handlers for existing functionality)
 	admin := router.PathPrefix("/admin").Subrouter()
 	admin.HandleFunc("/login", h.DashboardLogin).Methods("GET", "POST")
 	admin.HandleFunc("/logout", h.DashboardLogout).Methods("GET")
-	admin.HandleFunc("/", h.Dashboard).Methods("GET")
+	admin.HandleFunc("/", th.DashboardHandler).Methods("GET") // Updated to use Templ
 	admin.HandleFunc("/customers", h.CustomerCreate).Methods("POST")
 	admin.HandleFunc("/customers/{id}", h.CustomerEdit).Methods("GET", "POST")
 	admin.HandleFunc("/customers/{id}/model", h.ModelUpload).Methods("POST")
@@ -115,8 +129,8 @@ func setupRoutes(h *handlers.Handler) *mux.Router {
 	admin.HandleFunc("/analytics/live-stats", h.AnalyticsLiveStats).Methods("GET")
 	admin.HandleFunc("/analytics/generate-sample", h.GenerateSampleAnalytics).Methods("POST")
 
-	// Landing page
-	router.HandleFunc("/", h.Landing).Methods("GET")
+	// Landing page (updated to use Templ)
+	router.HandleFunc("/", th.LandingHandler).Methods("GET")
 	
 	// Direct admin access
 	router.HandleFunc("/dashboard", func(w http.ResponseWriter, r *http.Request) {

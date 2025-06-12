@@ -1,0 +1,239 @@
+package components
+
+import "fmt"
+
+// BaseLayout provides the main HTML structure
+templ BaseLayout(title string, description string, children templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full">
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+		<meta name="description" content={ description }/>
+		<title>{ title } | Go Chat Widget Dashboard</title>
+		
+		<!-- Preconnect to external resources -->
+		<link rel="preconnect" href="https://fonts.googleapis.com"/>
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+		
+		<!-- Inter font -->
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+		
+		<!-- Tailwind CSS -->
+		<link href="/dist/main.css" rel="stylesheet"/>
+		
+		<!-- HTMX -->
+		<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+		
+		<!-- Favicon -->
+		<link rel="icon" type="image/x-icon" href="/static/favicon.ico"/>
+		
+		<!-- Meta tags for SEO and social sharing -->
+		<meta property="og:title" content={ title }/>
+		<meta property="og:description" content={ description }/>
+		<meta property="og:type" content="website"/>
+		<meta name="twitter:card" content="summary_large_image"/>
+		<meta name="twitter:title" content={ title }/>
+		<meta name="twitter:description" content={ description }/>
+	</head>
+	<body class="h-full bg-gray-50">
+		<div id="root" class="min-h-full">
+			@children
+		</div>
+		
+		<!-- Global scripts -->
+		<script src="/dist/main.js"></script>
+		
+		<!-- HTMX extensions -->
+		<script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/ws.js"></script>
+		
+		<!-- Chat widget container -->
+		<div id="chatWidget"></div>
+		
+		<!-- Loading indicator -->
+		<div id="loadingIndicator" class="htmx-indicator fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+			<div class="bg-white rounded-lg p-6 flex items-center space-x-3">
+				<div class="spinner"></div>
+				<span class="text-gray-700">Loading...</span>
+			</div>
+		</div>
+	</body>
+	</html>
+}
+
+// Navigation component
+templ Navigation(currentPath string) {
+	<nav class="bg-white shadow-sm border-b border-gray-200">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+			<div class="flex justify-between h-16">
+				<div class="flex">
+					<div class="flex-shrink-0 flex items-center">
+						<a href="/" class="text-xl font-bold text-gradient">
+							ChatWidget
+						</a>
+					</div>
+					<div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+						@NavLink("/", "Home", currentPath)
+						@NavLink("/dashboard", "Dashboard", currentPath)
+						@NavLink("/analytics", "Analytics", currentPath)
+						@NavLink("/api/docs", "API Docs", currentPath)
+					</div>
+				</div>
+				<div class="hidden sm:ml-6 sm:flex sm:items-center">
+					<div class="flex items-center space-x-4">
+						<!-- Status indicator -->
+						<div class="flex items-center space-x-2">
+							<div class="w-2 h-2 bg-green-400 rounded-full"></div>
+							<span class="text-sm text-gray-500">Online</span>
+						</div>
+						
+						<!-- User menu placeholder -->
+						<div class="relative">
+							<button class="bg-gray-800 flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+								<span class="sr-only">Open user menu</span>
+								<div class="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
+									<span class="text-sm font-medium text-white">A</span>
+								</div>
+							</button>
+						</div>
+					</div>
+				</div>
+				
+				<!-- Mobile menu button -->
+				<div class="sm:hidden flex items-center">
+					<button type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500">
+						<span class="sr-only">Open main menu</span>
+						<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+						</svg>
+					</button>
+				</div>
+			</div>
+		</div>
+	</nav>
+}
+
+// NavLink component for navigation items
+templ NavLink(href, text, currentPath string) {
+	if currentPath == href {
+		<a href={ href } class="border-primary-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+			{ text }
+		</a>
+	} else {
+		<a href={ href } class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+			{ text }
+		</a>
+	}
+}
+
+// Main content wrapper
+templ MainContent(sidebar bool, children templ.Component) {
+	if sidebar {
+		<div class="flex h-screen bg-gray-50">
+			<div class="flex-1 flex flex-col overflow-hidden">
+				<main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+					<div class="container mx-auto px-6 py-8">
+						@children
+					</div>
+				</main>
+			</div>
+		</div>
+	} else {
+		<main class="flex-1">
+			@children
+		</main>
+	}
+}
+
+// Page header component
+templ PageHeader(title, description string) {
+	<div class="mb-8">
+		<h1 class="text-3xl font-bold text-gray-900">{ title }</h1>
+		if description != "" {
+			<p class="mt-2 text-gray-600">{ description }</p>
+		}
+	</div>
+}
+
+// Card component
+templ Card(title string, className string, children templ.Component) {
+	<div class={ "card", className }>
+		if title != "" {
+			<div class="card-header">
+				<h3 class="text-lg font-medium text-gray-900">{ title }</h3>
+			</div>
+		}
+		<div class="card-body">
+			@children
+		</div>
+	</div>
+}
+
+// Button component
+templ Button(text, variant, onclick string, disabled bool) {
+	if onclick != "" {
+		<button 
+			onclick={ onclick } 
+			disabled?={ disabled }
+			class={ "btn", fmt.Sprintf("btn-%s", variant) }
+		>
+			{ text }
+		</button>
+	} else {
+		<button 
+			disabled?={ disabled }
+			class={ "btn", fmt.Sprintf("btn-%s", variant) }
+		>
+			{ text }
+		</button>
+	}
+}
+
+// Loading spinner component
+templ Spinner(size string) {
+	if size == "large" {
+		<div class="flex justify-center">
+			<div class="w-8 h-8 border-4 border-gray-200 border-t-primary-600 rounded-full animate-spin"></div>
+		</div>
+	} else {
+		<div class="spinner"></div>
+	}
+}
+
+// Badge component
+templ Badge(text, variant string) {
+	<span class={ "badge", fmt.Sprintf("badge-%s", variant) }>
+		{ text }
+	</span>
+}
+
+// Alert component
+templ Alert(message, variant string) {
+	<div class={ "alert", fmt.Sprintf("alert-%s", variant), "p-4 rounded-lg mb-4" }>
+		<div class="flex">
+			<div class="flex-shrink-0">
+				switch variant {
+				case "success":
+					<svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+						<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+					</svg>
+				case "error":
+					<svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+						<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+					</svg>
+				case "warning":
+					<svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+						<path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+					</svg>
+				default:
+					<svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+						<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+					</svg>
+				}
+			</div>
+			<div class="ml-3">
+				<p class="text-sm font-medium">{ message }</p>
+			</div>
+		</div>
+	</div>
+}

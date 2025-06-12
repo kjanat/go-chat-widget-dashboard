@@ -1,6 +1,22 @@
 # Created by https://www.toptal.com/developers/gitignore/api/windows,macos,linux,go,visualstudiocode,jetbrains+all,microsoftoffice
 # Edit at https://www.toptal.com/developers/gitignore?templates=windows,macos,linux,go,visualstudiocode,jetbrains+all,microsoftoffice
 
+# Templ generated files
+*_templ.go
+
+# Frontend build artifacts
+/dist/
+/node_modules/
+
+# Build artifacts
+/uploads/
+/db/
+tmp/
+
+# IDE and system files
+.DS_Store
+.vscode/settings.json
+
 ### Go ###
 # If you prefer the allow list template instead of the deny list, see community template:
 # https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
@@ -256,3 +272,8 @@ tmp/build-errors.log
 tmp/main
 chat-dashboard
 chat-widget-dashboard
+
+.pnpm-store/
+node_modules/
+
+.specstory/

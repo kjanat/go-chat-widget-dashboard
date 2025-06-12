@@ -1,0 +1,13 @@
+package views
+
+import "github.com/kjanat/go-chat-widget-dashboard/components"
+import "github.com/kjanat/go-chat-widget-dashboard/internal/models"
+
+templ LandingPage(stats *models.DashboardStats) {
+	@components.BaseLayout("Welcome", "Professional chat widget solution") {
+		<div>
+			<h1>Welcome to Chat Widget</h1>
+			<p>This is a test page.</p>
+		</div>
+	}
+}
