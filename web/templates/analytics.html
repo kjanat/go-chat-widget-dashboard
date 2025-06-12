@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Chat Widget</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+        }
+
+        .metric-card.sessions {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .metric-card.messages {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .metric-card.response-time {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .metric-card.satisfaction {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+        }
+
+        .metric-card.conversion {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .metric-icon {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 2rem;
+            opacity: 0.3;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .realtime-indicator {
+            width: 12px;
+            height: 12px;
+            background: #28a745;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+            }
+        }
+
+        .activity-feed {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 0.8rem;
+        }
+
+        .activity-icon.new-session {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .activity-icon.new-message {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+
+        .activity-icon.conversion {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .time-range-selector {
+            background: white;
+            border-radius: 10px;
+            padding: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-tabs {
+            border: none;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: #666;
+            background: transparent;
+            border-radius: 8px;
+            margin: 0 2px;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/admin/">Chat Widget Dashboard</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/admin/">Customers</a>
+                <a class="nav-link active" href="/admin/analytics">Analytics</a>
+                <a class="nav-link" href="/admin/chat-logs">Chat Logs</a>
+            </div>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">Welcome, {{.Username}}</span>
+                <a class="nav-link" href="/admin/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2><span class="realtime-indicator"></span>Analytics Dashboard</h2>
+                <p class="text-muted mb-0">Real-time insights into your chat widget performance</p>
+            </div>
+            <div class="time-range-selector">
+                <ul class="nav nav-tabs" id="timeRangeTabs">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-range="today">Today</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-range="week">This Week</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#" data-range="month">This Month</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-range="all">All Time</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Metrics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="metric-card sessions">
+                    <i class="bi bi-people metric-icon"></i>
+                    <div class="metric-value" id="totalSessions">{{.Stats.TotalSessions}}</div>
+                    <div class="metric-label">Total Sessions</div>
+                    <small class="d-block mt-1">
+                        <span id="activeSessions">{{.Stats.ActiveSessions}}</span> active now
+                    </small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="metric-card messages">
+                    <i class="bi bi-chat-dots metric-icon"></i>
+                    <div class="metric-value" id="totalMessages">{{.Stats.TotalMessages}}</div>
+                    <div class="metric-label">Total Messages</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="metric-card response-time">
+                    <i class="bi bi-clock metric-icon"></i>
+                    <div class="metric-value" id="avgResponseTime">{{printf "%.0f" .Stats.AvgResponseTime}}ms</div>
+                    <div class="metric-label">Avg Response Time</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="metric-card satisfaction">
+                    <i class="bi bi-star metric-icon"></i>
+                    <div class="metric-value" id="avgSatisfaction">{{printf "%.1f" .Stats.AvgSatisfaction}}/5</div>
+                    <div class="metric-label">Satisfaction Score</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="metric-card conversion">
+                    <i class="bi bi-graph-up metric-icon"></i>
+                    <div class="metric-value" id="conversionRate">{{printf "%.1f" .Stats.ConversionRate}}%</div>
+                    <div class="metric-label">Conversion Rate</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="metric-card">
+                    <i class="bi bi-globe metric-icon"></i>
+                    <div class="metric-value" id="topCountry">{{if .Stats.TopCountries}}{{(index .Stats.TopCountries 0).Country}}{{else}}N/A{{end}}</div>
+                    <div class="metric-label">Top Country</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row">
+            <!-- Hourly Activity Chart -->
+            <div class="col-lg-8">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="bi bi-graph-up text-primary"></i>
+                        Hourly Activity
+                    </div>
+                    <canvas id="hourlyActivityChart" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- Live Activity Feed -->
+            <div class="col-lg-4">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="bi bi-activity text-success"></i>
+                        Live Activity Feed
+                    </div>
+                    <div class="activity-feed" id="activityFeed">
+                        <!-- Real-time activities will appear here -->
+                        <div class="activity-item">
+                            <div class="activity-icon new-session">
+                                <i class="bi bi-person-plus"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">New chat session started</div>
+                                <small class="text-muted">Customer: Demo Corp • 2 minutes ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon new-message">
+                                <i class="bi bi-chat"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">New message received</div>
+                                <small class="text-muted">Customer: Tech Solutions • 5 minutes ago</small>
+                            </div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon conversion">
+                                <i class="bi bi-trophy"></i>
+                            </div>
+                            <div>
+                                <div class="fw-bold">Conversion event</div>
+                                <small class="text-muted">Customer: StartupCo • 12 minutes ago</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Second Row of Charts -->
+        <div class="row">
+            <!-- Geographic Distribution -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="bi bi-geo-alt text-info"></i>
+                        Geographic Distribution
+                    </div>
+                    <canvas id="geographicChart" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- Device Breakdown -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="bi bi-device-hdd text-warning"></i>
+                        Device Breakdown
+                    </div>
+                    <canvas id="deviceChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Performance Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="bi bi-table text-secondary"></i>
+                        Customer Performance
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Customer</th>
+                                    <th>Sessions</th>
+                                    <th>Messages</th>
+                                    <th>Avg Satisfaction</th>
+                                    <th>Conversion Rate</th>
+                                    <th>Performance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customerPerformanceTable">
+                                {{range .Stats.CustomerActivity}}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{.CustomerName}}</div>
+                                        <small class="text-muted">{{.CustomerID}}</small>
+                                    </td>
+                                    <td>{{.SessionCount}}</td>
+                                    <td>{{.MessageCount}}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">{{printf "%.1f" .AvgSatisfaction}}/5</span>
+                                            <div class="progress" style="width: 60px; height: 6px;">
+                                                <div class="progress-bar bg-success" style="width: {{printf " %.0f" (mul .AvgSatisfaction 20)}}%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{printf "%.1f" .ConversionRate}}%</td>
+                                    <td>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-primary" style="width: {{printf " %.0f" .ConversionRate}}%"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Analytics data from server
+        const analyticsData = {
+            hourlyActivity: {{ json .Stats.HourlyActivity }},
+        topCountries: { { json.Stats.TopCountries; } },
+        deviceBreakdown: { { json.Stats.DeviceBreakdown; } },
+        customerActivity: { { json.Stats.CustomerActivity; } }
+    };
+
+        // Initialize charts
+        initializeCharts();
+        setupRealTimeUpdates();
+        setupTimeRangeSelector();
+
+        function initializeCharts() {
+            // Hourly Activity Chart
+            const hourlyCtx = document.getElementById('hourlyActivityChart').getContext('2d');
+            new Chart(hourlyCtx, {
+                type: 'line',
+                data: {
+                    labels: analyticsData.hourlyActivity.map(h => `${h.hour}:00`),
+                    datasets: [
+                        {
+                            label: 'Sessions',
+                            data: analyticsData.hourlyActivity.map(h => h.session_count),
+                            borderColor: '#4facfe',
+                            backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Messages',
+                            data: analyticsData.hourlyActivity.map(h => h.message_count),
+                            borderColor: '#43e97b',
+                            backgroundColor: 'rgba(67, 233, 123, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Geographic Chart
+            const geoCtx = document.getElementById('geographicChart').getContext('2d');
+            new Chart(geoCtx, {
+                type: 'bar',
+                data: {
+                    labels: analyticsData.topCountries.map(c => c.country),
+                    datasets: [ {
+                        label: 'Sessions by Country',
+                        data: analyticsData.topCountries.map(c => c.session_count),
+                        backgroundColor: [
+                            '#4facfe', '#43e97b', '#fa709a', '#fee140', '#a8edea',
+                            '#fecfef', '#667eea', '#764ba2', '#f093fb', '#f5576c'
+                        ]
+                    } ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Device Chart
+            const deviceCtx = document.getElementById('deviceChart').getContext('2d');
+            new Chart(deviceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: analyticsData.deviceBreakdown.map(d => d.device_type.charAt(0).toUpperCase() + d.device_type.slice(1)),
+                    datasets: [ {
+                        data: analyticsData.deviceBreakdown.map(d => d.percentage),
+                        backgroundColor: [ '#4facfe', '#43e97b', '#fa709a', '#fee140' ]
+                    } ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function setupRealTimeUpdates() {
+            // Simulate real-time updates every 30 seconds
+            setInterval(() => {
+                // Update active sessions count
+                fetch('/admin/analytics/live-stats')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('activeSessions').textContent = data.activeSessions;
+                        updateActivityFeed(data.recentActivity);
+                    })
+                    .catch(console.error);
+            }, 30000);
+        }
+
+        function updateActivityFeed(activities) {
+            const feed = document.getElementById('activityFeed');
+            // Add new activities to the top of the feed
+            activities.forEach(activity => {
+                const item = createActivityItem(activity);
+                feed.insertBefore(item, feed.firstChild);
+            });
+
+            // Keep only the latest 10 activities
+            while (feed.children.length > 10) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        function createActivityItem(activity) {
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+
+            const iconClass = activity.type === 'new_session' ? 'new-session' :
+                activity.type === 'new_message' ? 'new-message' : 'conversion';
+            const iconName = activity.type === 'new_session' ? 'person-plus' :
+                activity.type === 'new_message' ? 'chat' : 'trophy';
+
+            item.innerHTML = `
+        <div class="activity-icon ${iconClass}">
+          <i class="bi bi-${iconName}"></i>
+        </div>
+        <div>
+          <div class="fw-bold">${activity.description}</div>
+          <small class="text-muted">${activity.customerName} • ${activity.timeAgo}</small>
+        </div>
+      `;
+
+            return item;
+        }
+
+        function setupTimeRangeSelector() {
+            const tabs = document.querySelectorAll('#timeRangeTabs .nav-link');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    // Refresh data for selected time range
+                    const range = tab.dataset.range;
+                    refreshAnalyticsData(range);
+                });
+            });
+        }
+
+        function refreshAnalyticsData(timeRange) {
+            // Show loading state
+            const loader = document.createElement('div');
+            loader.className = 'text-center py-4';
+            loader.innerHTML = '<div class="spinner-border text-primary" role="status"></div>';
+
+            // Fetch new data
+            fetch(`/admin/analytics?range=${timeRange}`)
+                .then(response => response.text())
+                .then(html => {
+                    // Parse the new HTML and update the page
+                    const parser = new DOMParser();
+                    const newDoc = parser.parseFromString(html, 'text/html');
+
+                    // Update metrics
+                    document.getElementById('totalSessions').textContent =
+                        newDoc.getElementById('totalSessions').textContent;
+                    document.getElementById('totalMessages').textContent =
+                        newDoc.getElementById('totalMessages').textContent;
+                    document.getElementById('avgResponseTime').textContent =
+                        newDoc.getElementById('avgResponseTime').textContent;
+                    document.getElementById('avgSatisfaction').textContent =
+                        newDoc.getElementById('avgSatisfaction').textContent;
+                    document.getElementById('conversionRate').textContent =
+                        newDoc.getElementById('conversionRate').textContent;
+
+                    // Reinitialize charts with new data
+                    // This would require extracting the new analytics data and updating the charts
+                })
+                .catch(console.error);
+        }
+
+        // Add some visual flair
+        document.addEventListener('DOMContentLoaded', () => {
+            // Animate metric cards on load
+            const metricCards = document.querySelectorAll('.metric-card');
+            metricCards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,129 @@
+package views
+
+import "github.com/kjanat/go-chat-widget-dashboard/components"
+import "github.com/kjanat/go-chat-widget-dashboard/internal/models"
+import "fmt"
+import "strconv"
+
+templ LandingPage(stats *models.DashboardStats) {
+	@components.BaseLayout("Welcome", "Professional chat widget solution for your website") {
+		@components.Navigation("/")
+		
+		<!-- Hero Section -->
+		<section class="relative bg-gradient-to-br from-primary-50 to-purple-50 overflow-hidden">
+			<div class="absolute inset-0 bg-white/50"></div>
+			<div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+				<div class="grid lg:grid-cols-2 gap-12 items-center">
+					<div class="space-y-8">
+						<div class="space-y-6">
+							<h1 class="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+								Modern 
+								<span class="text-gradient">Chat Widget</span>
+								for Your Website
+							</h1>
+							<p class="text-xl text-gray-600 leading-relaxed">
+								Engage your visitors with our beautiful, responsive chat widget. 
+								Built with Go, HTMX, and modern web technologies for optimal performance.
+							</p>
+						</div>
+						
+						<div class="flex flex-col sm:flex-row gap-4">
+							<a href="/dashboard" class="btn-primary text-center">
+								View Dashboard
+							</a>
+							<a href="#demo" class="btn-secondary text-center">
+								Try Demo
+							</a>
+						</div>
+						
+						<!-- Live Stats -->
+						if stats != nil {
+							<div class="grid grid-cols-3 gap-6 pt-8 border-t border-gray-200">
+								<div class="text-center">
+									<div class="text-2xl font-bold text-primary-600">
+										{ strconv.FormatInt(stats.TotalSessions, 10) }
+									</div>
+									<div class="text-sm text-gray-500">Total Sessions</div>
+								</div>
+								<div class="text-center">
+									<div class="text-2xl font-bold text-primary-600">
+										{ strconv.FormatInt(stats.ActiveSessions, 10) }
+									</div>
+									<div class="text-sm text-gray-500">Active Now</div>
+								</div>
+								<div class="text-center">
+									<div class="text-2xl font-bold text-primary-600">
+										{ fmt.Sprintf("%.1f%%", stats.ConversionRate*100) }
+									</div>
+									<div class="text-sm text-gray-500">Conversion Rate</div>
+								</div>
+							</div>
+						}
+					</div>
+					
+					<div class="relative">
+						<!-- Chat Widget Preview -->
+						<div class="relative bg-white rounded-2xl shadow-2xl max-w-sm mx-auto">
+							<div class="bg-primary-600 text-white px-6 py-4 rounded-t-2xl">
+								<div class="flex items-center space-x-3">
+									<div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+									<span class="font-medium">Customer Support</span>
+								</div>
+							</div>
+							<div class="p-6 space-y-4 h-64 overflow-y-auto">
+								<div class="flex justify-start">
+									<div class="bg-gray-100 rounded-lg px-4 py-2 max-w-xs">
+										<p class="text-sm">👋 Welcome! How can I help you today?</p>
+									</div>
+								</div>
+								<div class="flex justify-end">
+									<div class="bg-primary-600 text-white rounded-lg px-4 py-2 max-w-xs">
+										<p class="text-sm">Hi! I have a question about pricing.</p>
+									</div>
+								</div>
+							</div>
+							<div class="p-4 border-t border-gray-200">
+								<div class="flex space-x-2">
+									<input type="text" placeholder="Type your message..." class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"/>
+									<button class="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+										Send
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		
+		<!-- CTA Section -->
+		<section class="py-24 bg-primary-600">
+			<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+				<h2 class="text-4xl font-bold text-white mb-4">
+					Ready to Get Started?
+				</h2>
+				<p class="text-xl text-primary-100 mb-8 max-w-3xl mx-auto">
+					Join thousands of websites already using our chat widget to improve customer engagement.
+				</p>
+				<div class="flex flex-col sm:flex-row gap-4 justify-center">
+					<a href="/dashboard" class="bg-white text-primary-600 px-8 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+						View Dashboard
+					</a>
+					<a href="/api/docs" class="border border-white text-white px-8 py-3 rounded-lg font-medium hover:bg-white hover:text-primary-600 transition-colors">
+						API Documentation
+					</a>
+				</div>
+			</div>
+		</section>
+	}
+}
+
+templ FeatureCard(title, description, icon string) {
+	<div class="card hover:shadow-lg transition-shadow duration-300">
+		<div class="card-body text-center">
+			<div class="text-4xl mb-4">{ icon }</div>
+			<h3 class="text-xl font-semibold text-gray-900 mb-3">{ title }</h3>
+			<p class="text-gray-600">{ description }</p>
+		</div>
+	</div>
+}

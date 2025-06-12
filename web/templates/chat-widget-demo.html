@@ -1,0 +1,163 @@
+<!-- Chat Widget HTML partial for embedding in landing page -->
+<div id="chat-widget-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+    <!-- Widget Button -->
+    <div id="chat-widget-button" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.3s ease; animation: pulse 2s infinite;" onclick="toggleChatWidget()">
+        <svg width="24" height="24" fill="white" viewBox="0 0 24 24">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+        </svg>
+    </div>
+
+    <!-- Widget Chat Window -->
+    <div id="chat-widget-window" style="display: none; width: 350px; height: 500px; background: white; border-radius: 12px; 
+                box-shadow: 0 8px 30px rgba(0,0,0,0.12); position: absolute; bottom: 80px; right: 0;
+                overflow: hidden; animation: fadeInUp 0.3s ease;">
+
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px; 
+                    display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h4 style="margin: 0; font-size: 16px;">Chat with us!</h4>
+                <p style="margin: 0; font-size: 12px; opacity: 0.8;">We're here to help</p>
+            </div>
+            <button onclick="toggleChatWidget()" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">×</button>
+        </div>
+
+        <!-- Messages -->
+        <div id="chat-messages" style="height: 350px; overflow-y: auto; padding: 16px; background: #f8f9fa;">
+            <div class="chat-message bot" style="margin-bottom: 12px;">
+                <div style="background: #e9ecef; padding: 8px 12px; border-radius: 18px; max-width: 80%; display: inline-block;">
+                    Hi! I'm your AI assistant. How can I help you today?
+                </div>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div style="padding: 16px; border-top: 1px solid #e9ecef; background: white;">
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="chat-input" placeholder="Type your message..." style="flex: 1; padding: 12px; border: 1px solid #dee2e6; border-radius: 20px; 
+                              outline: none; font-size: 14px;" onkeypress="handleChatKeyPress(event)">
+                <button onclick="sendChatMessage()" style="padding: 12px 16px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                               color: white; border: none; border-radius: 20px; cursor: pointer;">
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    #chat-widget-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .chat-message.user {
+        text-align: right;
+    }
+
+    .chat-message.user div {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-left: 20%;
+    }
+
+    .chat-message.bot div {
+        background: #e9ecef;
+        color: #333;
+    }
+</style>
+
+<script>
+    let isWidgetOpen = false;
+
+    function toggleChatWidget() {
+        const window = document.getElementById('chat-widget-window');
+        const button = document.getElementById('chat-widget-button');
+
+        if (isWidgetOpen) {
+            window.style.display = 'none';
+            button.innerHTML = '<svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>';
+        } else {
+            window.style.display = 'block';
+            button.innerHTML = '<svg width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+        }
+        isWidgetOpen = !isWidgetOpen;
+    }
+
+    function handleChatKeyPress(event) {
+        if (event.key === 'Enter') {
+            sendChatMessage();
+        }
+    }
+
+    function sendChatMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        // Add user message
+        addChatMessage(message, 'user');
+        input.value = '';
+
+        // Simulate bot response
+        setTimeout(() => {
+            const responses = [
+                "That's a great question! Our team can help you with that.",
+                "Thanks for reaching out! Let me connect you with the right person.",
+                "I'd be happy to help you with that. What specific information do you need?",
+                "Great! Our chat widget can be easily integrated into your website.",
+                "That sounds interesting! Would you like to schedule a demo?"
+            ];
+            const response = responses[ Math.floor(Math.random() * responses.length) ];
+            addChatMessage(response, 'bot');
+        }, 1000);
+    }
+
+    function addChatMessage(message, sender) {
+        const messagesContainer = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender}`;
+        messageDiv.style.marginBottom = '12px';
+
+        messageDiv.innerHTML = `
+        <div style="padding: 8px 12px; border-radius: 18px; max-width: 80%; display: inline-block; 
+                    ${sender === 'user' ?
+                'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-left: 20%;' :
+                'background: #e9ecef; color: #333;'}">
+            ${message}
+        </div>
+    `;
+
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+</script>

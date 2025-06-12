@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Customer - Chat Widget Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/admin/">Chat Widget Dashboard</a>
+      <div class="navbar-nav ms-auto">
+        <a class="nav-link" href="/admin/">Back to Dashboard</a>
+        <a class="nav-link" href="/admin/logout">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header">
+            <h4>Edit Customer: {{.Name}}</h4>
+          </div>
+          <div class="card-body">
+            <form method="POST">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{.Name}}" required>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" value="{{.Email}}" required>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="allowed_domains" class="form-label">Allowed Domains</label>
+                <input type="text" class="form-control" id="allowed_domains" name="allowed_domains" value="{{.AllowedDomains}}" placeholder="example.com, *.example.com, *">
+                <div class="form-text">Comma-separated list of allowed domains. Use * for all domains.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="logo_url" class="form-label">Logo URL</label>
+                <input type="url" class="form-control" id="logo_url" name="logo_url" value="{{.LogoURL}}">
+              </div>
+
+              <div class="mb-3">
+                <label for="brand_colors" class="form-label">Brand Colors</label>
+                <textarea class="form-control" id="brand_colors" name="brand_colors" rows="4" placeholder="primary: #007bff&#10;secondary: #6c757d&#10;background: #ffffff&#10;text: #212529">{{.BrandColors | toNewlines}}</textarea>
+                <div class="form-text">Simple format: one color per line as "name: #color". Common names: primary, secondary, background, text.</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="openai_prompt" class="form-label">OpenAI System Prompt</label>
+                <textarea class="form-control" id="openai_prompt" name="openai_prompt" rows="4" placeholder="You are a helpful customer service assistant...">{{.OpenAIPrompt}}</textarea>
+              </div>
+
+              <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="active" name="active" {{if .Active}}checked{{end}}>
+                <label class="form-check-label" for="active">
+                  Active
+                </label>
+              </div>
+
+              <div class="d-flex justify-content-between">
+                <a href="/admin/" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h5>{{if .ModelPath}}3D Model Management{{else}}3D Model Upload{{end}}</h5>
+          </div>
+          <div class="card-body">
+            {{if .ModelPath}}
+            <div class="alert alert-success">
+              <i class="bi bi-check-circle"></i> Model uploaded: {{.ModelPath}}
+            </div>
+
+            <div class="d-flex gap-2 mb-3">
+                <a href="/admin/customers/{{.ID}}/model/download" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-download"></i> Download Current Model
+                </a>
+                <button type="button" class="btn btn-outline-warning btn-sm" onclick="showUploadForm()">
+                    <i class="bi bi-arrow-repeat"></i> Replace Model
+                </button>
+            </div>
+            
+            <div id="uploadFormContainer" style="display: none;">
+            <form id="modelForm" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="model" class="form-label">Upload New Model (.glb/.gltf)</label>
+                    <input type="file" class="form-control" id="model" name="model" accept=".glb,.gltf">
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-upload"></i> Replace Model
+                    </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="hideUploadForm()">
+                    Cancel
+                </button>
+                </div>
+            </form>
+            </div>
+            {{else}}
+            <div id="dropZone" class="border border-2 border-dashed border-primary rounded p-4 text-center" style="min-height: 150px; cursor: pointer;">
+                <i class="bi bi-cloud-upload fs-1 text-primary"></i>
+                <p class="mt-2 mb-0">
+                    <strong>Drag & drop your 3D model here</strong><br>
+                    <small class="text-muted">or click to browse files</small><br>
+                    <small class="text-muted">Supported formats: .glb, .gltf</small>
+                </p>
+                <input type="file" id="model" name="model" accept=".glb,.gltf" style="display: none;">
+            </div>
+            {{end}}
+            </div>
+        </div>
+
+        <div class="card mt-3">
+          <div class="card-header">
+            <h5>API Information</h5>
+          </div>
+          <div class="card-body">
+            <p><strong>Customer ID:</strong><br><code>{{.ID}}</code></p>
+            <p><strong>API Key:</strong><br><code>{{.APIKey}}</code></p>
+            <p><strong>Created:</strong><br>{{.CreatedAt.Format "2006-01-02 15:04:05"}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+        function showUploadForm() {
+            document.getElementById('uploadFormContainer').style.display = 'block';
+        }
+
+        function hideUploadForm() {
+            document.getElementById('uploadFormContainer').style.display = 'none';
+        }
+
+        // Handle drag and drop for new uploads
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('model');
+
+        if (dropZone) {
+            // Click to browse
+            dropZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Drag and drop events
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-success');
+                dropZone.style.backgroundColor = '#f8f9fa';
+            });
+
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-success');
+                dropZone.style.backgroundColor = '';
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-success');
+                dropZone.style.backgroundColor = '';
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[ 0 ];
+                    if (file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf')) {
+                        fileInput.files = files;
+                        uploadModel(file);
+                    } else {
+                        alert('Please select a valid .glb or .gltf file');
+                    }
+                }
+            });
+
+            // Handle file input change (for click selection)
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    uploadModel(e.target.files[ 0 ]);
+                }
+            });
+        }
+
+        // Handle form submission for model replacement
+        const modelForm = document.getElementById('modelForm');
+        if (modelForm) {
+            modelForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+
+          const formData = new FormData();
+          const fileInput = document.getElementById('model');
+          if (!fileInput.files[ 0 ]) {
+              alert('Please select a file');
+              return;
+          }
+          formData.append('model', fileInput.files[ 0 ]);
+          await uploadModelData(formData);
+      });
+            }
+
+            async function uploadModel(file) {
+                const formData = new FormData();
+                formData.append('model', file);
+                await uploadModelData(formData);
+            }
+
+        async function uploadModelData(formData) {
+      try {
+        const response = await fetch(`/admin/customers/{{.ID}}/model`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          alert('Model uploaded successfully!');
+          location.reload();
+        } else {
+            const errorText = await response.text();
+            alert('Error uploading model: ' + errorText);
+        }
+      } catch (error) {
+        alert('Error uploading model: ' + error.message);
+      }
+    }
+  </script>
+</body>
+
+</html>

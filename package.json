@@ -1,0 +1,40 @@
+{
+    "name": "go-chat-widget-dashboard",
+    "version": "1.0.0",
+    "description": "A complete, production-ready chat widget system built with Go, featuring a 3D avatar, admin dashboard, and real-time WebSocket communication. This system allows businesses to embed a customizable chat widget on their websites with OpenAI integration and 3D model support.",
+    "main": "index.js",
+    "scripts": {
+        "build:css": "tailwindcss -i ./assets/css/main.css -o ./dist/main.css --minify",
+        "build:css:watch": "tailwindcss -i ./assets/css/main.css -o ./dist/main.css --watch",
+        "build:js": "cp ./assets/js/main.js ./dist/main.js",
+        "build:js:watch": "chokidar './assets/js/**/*.js' -c 'npm run build:js'",
+        "build:templ": "templ generate",
+        "build:templ:watch": "templ generate --watch",
+        "build:go": "go build -o bin/server .",
+        "build:go:watch": "air",
+        "build": "npm run build:css && npm run build:js && npm run build:templ && npm run build:go",
+        "dev": "concurrently \"npm run build:css:watch\" \"npm run build:js:watch\" \"npm run build:templ:watch\" \"npm run build:go:watch\"",
+        "start": "./bin/server",
+        "clean": "rm -rf dist/* bin/* && find . -name '*_templ.go' -delete"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kjanat/go-chat-widget-dashboard.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/kjanat/go-chat-widget-dashboard/issues"
+    },
+    "homepage": "https://github.com/kjanat/go-chat-widget-dashboard#readme",
+    "devDependencies": {
+        "@tailwindcss/aspect-ratio": "^0.4.2",
+        "@tailwindcss/container-queries": "^0.1.1",
+        "@tailwindcss/forms": "^0.5.10",
+        "@tailwindcss/typography": "^0.5.16",
+        "chokidar-cli": "^3.0.0",
+        "concurrently": "^9.1.2",
+        "tailwindcss": "^4.1.8"
+    }
+}

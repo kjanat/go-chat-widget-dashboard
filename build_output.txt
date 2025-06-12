@@ -1,0 +1,2 @@
+components/simple_base_templ.go:7:1: expected 'package', found 'import'
+found packages main (debug_templ.go) and views (simple_test_templ.go) in /workspaces/go-chat-widget-dashboard
